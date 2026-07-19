@@ -100,7 +100,9 @@ npm run test       # tests unitarios (node --test) sobre utilidades puras
 4. Deploy. Vercel detecta Next.js automáticamente, no requiere configuración
    adicional.
 
-## Qué incluye esta etapa (Etapa 1: Base + Landing)
+## Qué incluye esta etapa
+
+### Etapa 1: Base + Landing
 
 - Arquitectura completa del proyecto, sistema de diseño y componentes UI.
 - Landing pública completa: Header, Hero, Servicios, Proceso, Proyectos
@@ -108,10 +110,8 @@ npm run test       # tests unitarios (node --test) sobre utilidades puras
   Videos con fachada de YouTube (lazy load), Tienda destacada, Contacto,
   Footer.
 - Todas las rutas de la arquitectura de información (sección 4 del
-  documento) navegables: las de tienda/cuenta/admin muestran una versión
-  funcional mínima o un estado "próxima etapa" coherente con el diseño, en
-  vez de un 404.
-- Catálogo de tienda de solo lectura, con búsqueda y ficha de producto.
+  documento) navegables: las de cuenta muestran un estado "próxima etapa"
+  coherente con el diseño, en vez de un 404.
 - Formulario de login/registro conectado a Supabase Auth (si está
   configurado).
 - Formulario de contacto con Server Action, validación Zod, honeypot
@@ -121,27 +121,63 @@ npm run test       # tests unitarios (node --test) sobre utilidades puras
 - SEO: metadata estática y dinámica, Open Graph, JSON-LD (AutoRepair,
   BreadcrumbList, Product, VideoObject), sitemap.xml, robots.txt, 404
   coherente con el diseño.
-- Middleware que protege `/admin` verificando sesión server-side (no solo
-  ocultando botones en el cliente).
 
-## Roadmap — próximas etapas
+### Etapa 2 (en curso): Tienda + Admin, sin Mercado Pago todavía
+
+- **Carrito persistente**: contexto en localStorage (carrito de invitado,
+  no requiere sesión), drawer lateral, ícono con contador en la navbar,
+  página `/carrito` editable, botón "agregar al carrito" en el catálogo y
+  en la ficha de producto (acotado al stock real).
+- **Checkout sin pasarela de pago**: formulario de datos de contacto y
+  envío en `/checkout`. El Server Action (`src/actions/checkout.ts`)
+  revalida precio y stock server-side (nunca confía en el cliente), crea
+  el pedido y sus ítems, descuenta stock y deja un `inventory_movement`
+  de tipo `reserva` para trazabilidad. El pedido queda `pendiente_pago` —
+  todavía no hay cobro automático, se coordina manualmente. Confirmación
+  en `/pedido/[id]`.
+- **Panel `/admin` funcional** (antes era una pantalla vacía):
+  - Layout protegido server-side para todas las rutas anidadas (rol
+    admin/editor), con sidebar y logout.
+  - Dashboard con KPIs reales (productos publicados, stock bajo, pedidos
+    pendientes de pago, mensajes nuevos).
+  - CRUD de productos: alta, edición, cambio de estado/stock (sin subida
+    de imágenes todavía — se pega una ruta o URL existente).
+  - Gestión de pedidos: listado, detalle con ítems y datos de envío,
+    cambio manual de estado de pedido/pago (sustituto temporal del
+    webhook de Mercado Pago).
+  - Bandeja de mensajes de contacto: listado y cambio de estado.
+- Tests unitarios (`node --test`) para las validaciones Zod de checkout y
+  productos, además de las utilidades ya cubiertas en Etapa 1.
+
+**Importante para producción:** el checkout usa el cliente Supabase con
+`SUPABASE_SERVICE_ROLE_KEY` (ver `src/actions/checkout.ts` para el porqué:
+la RLS de `order_items` no tiene policy pública de insert). Confirmá que
+esa variable esté configurada en Vercel antes de probar una compra real —
+sin ella, `/checkout` responde "Supabase no está configurado" aunque el
+resto del sitio funcione.
+
+## Roadmap — lo que falta
 
 No incluido todavía, preparado para conectarse sin rehacer la base (tipos,
 modelo de datos y rutas ya existen):
 
-1. **Tienda completa**: carrito persistente (drawer, cantidades,
-   subtotal), checkout con Mercado Pago Checkout Pro (preference creada
-   server-side), retornos success/pending/failure, webhook idempotente.
-2. **Panel `/admin` completo**: CRUD de productos/inventario, pedidos y
-   pagos, proyectos, galerías, videos, testimonios, banners y
-   configuración de Home; dashboard con KPIs; auditoría de acciones
-   sensibles.
+1. **Mercado Pago**: Checkout Pro (preference creada server-side),
+   retornos success/pending/failure, webhook idempotente que confirme el
+   pago y actualice `orders`/`payment_status` automáticamente (hoy ese
+   cambio de estado es manual, desde `/admin/pedidos/[id]`).
+2. **Resto del CRUD de `/admin`**: proyectos, galerías (con sus imágenes),
+   videos, testimonios, banners y configuración del Home (`site_settings`).
+   Productos, pedidos y mensajes ya están.
 3. **Mi Cuenta**: perfil, direcciones, historial de pedidos.
 4. **Gestor multimedia**: subida múltiple, recorte, conversión a
-   WebP/AVIF, alt text y crédito.
+   WebP/AVIF, alt text y crédito (hoy las imágenes de producto se cargan
+   pegando una ruta/URL ya existente).
 5. **YouTube Data API**: sincronización automática de la playlist con
    fallback manual (ya soportado por el modelo de datos vía `videos.source`).
 6. **Importación/exportación CSV** de catálogo.
+7. **Auditoría de acciones sensibles** en `/admin` (la tabla `audit_logs`
+   ya existe en el modelo de datos, falta escribir en ella desde las
+   Server Actions).
 
 ## QA
 
