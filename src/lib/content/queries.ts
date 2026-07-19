@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { Gallery, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
+import type { Gallery, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
 import {
   FEATURED_PRODUCTS,
   GALLERIES,
@@ -149,6 +149,34 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     if (error) throw error;
     return data as Product;
   }, FEATURED_PRODUCTS.find((p) => p.slug === slug) ?? null);
+}
+
+/**
+ * Pedido con sus ítems, para la página de confirmación (/pedido/[id]).
+ *
+ * Usa el cliente admin (service role) a propósito: un pedido de invitado
+ * (user_id null) no es legible por RLS para nadie sin sesión de staff (ver
+ * supabase/migrations/0002_rls_policies.sql), así que esta página se apoya
+ * en que el id de pedido (UUID) es prácticamente no adivinable en vez de en
+ * una policy pública — el mismo criterio que usan la mayoría de las
+ * pasarelas de pago para sus páginas de confirmación por link directo.
+ */
+export async function getOrderConfirmation(id: string): Promise<(Order & { items: OrderItem[] }) | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("orders")
+      .select("*, items:order_items(*)")
+      .eq("id", id)
+      .single();
+    if (error) throw error;
+    return data as Order & { items: OrderItem[] };
+  } catch (error) {
+    console.warn("[checkout] No se pudo obtener el pedido:", (error as Error).message);
+    return null;
+  }
 }
 
 export async function getTestimonials(): Promise<Testimonial[]> {
