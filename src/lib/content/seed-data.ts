@@ -35,7 +35,7 @@ export const SERVICES: Service[] = [
     title: "Restauración integral",
     description:
       "Recuperamos el vehículo completo, de chasis a terminación, con criterio de preservación histórica y nivel de colección.",
-    image_url: "/images/galeria/trabajos.webp",
+    image_url: "/images/galeria/detalles.webp",
     position: 1,
     status: "published",
   },
@@ -75,7 +75,7 @@ export const SERVICES: Service[] = [
     title: "Proyectos especiales",
     description:
       "Restomods y personalizaciones a medida, manteniendo el carácter original del vehículo.",
-    image_url: "/images/galeria/detalles.webp",
+    image_url: "/images/galeria/trabajos.webp",
     position: 5,
     status: "published",
   },
