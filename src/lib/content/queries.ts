@@ -1,0 +1,160 @@
+import "server-only";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { Gallery, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
+import {
+  FEATURED_PRODUCTS,
+  GALLERIES,
+  PROJECTS,
+  SERVICES,
+  SITE_SETTINGS,
+  TESTIMONIALS,
+  VIDEOS,
+} from "@/lib/content/seed-data";
+
+/**
+ * Capa de acceso a contenido para la landing pública.
+ *
+ * Cada función intenta leer de Supabase cuando hay credenciales
+ * configuradas; si falla o no está configurado, usa los datos seed locales
+ * (lib/content/seed-data.ts). Esto mantiene el sitio funcional en todo
+ * momento y permite pasar a datos reales solo configurando .env.local y
+ * cargando supabase/seed.sql, sin tocar los componentes visuales.
+ */
+
+async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  if (!isSupabaseConfigured()) return fallback;
+  try {
+    return await fn();
+  } catch (error) {
+    console.warn("[content] Falling back to seed data:", (error as Error).message);
+    return fallback;
+  }
+}
+
+export async function getServices(): Promise<Service[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("services")
+      .select("*")
+      .eq("status", "published")
+      .order("position", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Service[];
+  }, SERVICES);
+}
+
+export async function getFeaturedProjects(): Promise<Project[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*, images:project_images(*)")
+      .eq("featured", true)
+      .order("year", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Project[];
+  }, PROJECTS);
+}
+
+export async function getProjectBySlug(slug: string): Promise<Project | null> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*, images:project_images(*)")
+      .eq("slug", slug)
+      .single();
+    if (error) throw error;
+    return data as Project;
+  }, PROJECTS.find((p) => p.slug === slug) ?? null);
+}
+
+export async function getGalleries(): Promise<Gallery[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("galleries")
+      .select("*, images:gallery_images(*)")
+      .eq("status", "published")
+      .order("published_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Gallery[];
+  }, GALLERIES);
+}
+
+export async function getGalleryByType(type: string): Promise<Gallery | null> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("galleries")
+      .select("*, images:gallery_images(*)")
+      .eq("gallery_type", type)
+      .eq("status", "published")
+      .single();
+    if (error) throw error;
+    return data as Gallery;
+  }, GALLERIES.find((g) => g.gallery_type === type) ?? null);
+}
+
+export async function getFeaturedVideos(): Promise<Video[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("videos")
+      .select("*")
+      .eq("featured", true)
+      .order("position", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Video[];
+  }, VIDEOS);
+}
+
+export async function getFeaturedProducts(): Promise<Product[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, images:product_images(*), variants:product_variants(*)")
+      .eq("status", "published")
+      .limit(4);
+    if (error) throw error;
+    return (data ?? []) as Product[];
+  }, FEATURED_PRODUCTS);
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, images:product_images(*), variants:product_variants(*)")
+      .eq("slug", slug)
+      .single();
+    if (error) throw error;
+    return data as Product;
+  }, FEATURED_PRODUCTS.find((p) => p.slug === slug) ?? null);
+}
+
+export async function getTestimonials(): Promise<Testimonial[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .eq("status", "published");
+    if (error) throw error;
+    return (data ?? []) as Testimonial[];
+  }, TESTIMONIALS);
+}
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("site_settings").select("key, value_json");
+    if (error) throw error;
+    const map = Object.fromEntries((data ?? []).map((row: { key: string; value_json: unknown }) => [row.key, row.value_json]));
+    return { ...SITE_SETTINGS, ...map } as SiteSettings;
+  }, SITE_SETTINGS);
+}

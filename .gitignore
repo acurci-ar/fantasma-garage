@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+.npm-cache/
+
+# next.js
+.next/
+out/
+build/
+
+# env
+.env
+.env*.local
+
+# misc
+.DS_Store
+*.log
+install*.log
+npm-debug.log*
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# assets fuente (no forman parte del código de la app)
+/imagenes/
+*.docx
+.~lock.*
+ChatGPT Image*.png
+
+# estado local de la CLI de Supabase (contiene project ref / org, no versionar)
+supabase/.temp/
