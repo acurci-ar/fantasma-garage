@@ -141,7 +141,7 @@ export const GALLERIES: Gallery[] = [
     title: "Amigos",
     gallery_type: "amigos",
     description: "Comunidad, encuentros y cultura alrededor de los clásicos.",
-    cover_url: "/images/galeria/mecanica.webp",
+    cover_url: "/images/galeria/amigos.webp",
     status: "published",
     published_at: null,
     images: [],
