@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/Button";
 
 /**
  * Estado "en construcción" coherente con la identidad visual, usado en
- * rutas cuya funcionalidad completa llega en una próxima etapa (carrito,
- * checkout, mi cuenta, admin). Nunca un 404: la ruta existe y comunica
- * claramente el estado, según el criterio de aceptación de navegación
- * completa (sección 11).
+ * rutas cuya funcionalidad completa llega en una próxima etapa (por ahora,
+ * "Mi cuenta"). Nunca un 404: la ruta existe y comunica claramente el
+ * estado, según el criterio de aceptación de navegación completa
+ * (sección 11).
  */
 export function ComingSoon({
   eyebrow,

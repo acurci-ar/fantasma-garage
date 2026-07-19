@@ -59,8 +59,8 @@ export function FeaturedShop({ products }: { products: Product[] }) {
       </div>
 
       <p className="mt-6 text-xs text-foreground/40">
-        Catálogo de demostración. El checkout completo con Mercado Pago se incorpora en la próxima
-        etapa (ver README).
+        El pago con Mercado Pago todavía no está integrado: el pedido queda pendiente de pago y te
+        contactamos para coordinarlo.
       </p>
     </Section>
   );
