@@ -1,0 +1,80 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { checkoutFormSchema } from "../src/lib/validation/checkout.ts";
+import { productSchema } from "../src/lib/validation/product.ts";
+
+const validCheckout = {
+  fullName: "Juan Pérez",
+  email: "juan@example.com",
+  phone: "1122334455",
+  street: "Av. Siempre Viva 742",
+  city: "Buenos Aires",
+  province: "Buenos Aires",
+  postalCode: "1425",
+  notes: "",
+  items: [{ productId: "9c858901-8a57-4791-81fe-4c455b099bc9", variantId: null, quantity: 2 }],
+};
+
+test("checkoutFormSchema acepta un pedido válido", () => {
+  const result = checkoutFormSchema.safeParse(validCheckout);
+  assert.equal(result.success, true);
+});
+
+test("checkoutFormSchema rechaza carrito vacío", () => {
+  const result = checkoutFormSchema.safeParse({ ...validCheckout, items: [] });
+  assert.equal(result.success, false);
+});
+
+test("checkoutFormSchema rechaza email inválido", () => {
+  const result = checkoutFormSchema.safeParse({ ...validCheckout, email: "no-es-un-email" });
+  assert.equal(result.success, false);
+});
+
+test("checkoutFormSchema rechaza productId que no es UUID", () => {
+  const result = checkoutFormSchema.safeParse({
+    ...validCheckout,
+    items: [{ productId: "no-es-uuid", variantId: null, quantity: 1 }],
+  });
+  assert.equal(result.success, false);
+});
+
+const validProduct = {
+  name: "Kit de suspensión",
+  slug: "kit-suspension",
+  sku: "FG-001",
+  short_description: "",
+  description: "",
+  price: "450000",
+  sale_price: "",
+  stock: "5",
+  low_stock_threshold: "2",
+  currency: "ARS",
+  status: "published",
+  image_url: "/images/productos/suspension.webp",
+  image_alt: "Kit de suspensión",
+};
+
+test("productSchema acepta un producto válido y castea números", () => {
+  const result = productSchema.safeParse(validProduct);
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.price, 450000);
+    assert.equal(result.data.stock, 5);
+    assert.equal(result.data.sale_price, null);
+  }
+});
+
+test("productSchema rechaza slug con mayúsculas o espacios", () => {
+  const result = productSchema.safeParse({ ...validProduct, slug: "Kit Suspensión" });
+  assert.equal(result.success, false);
+});
+
+test("productSchema rechaza precio no numérico", () => {
+  const result = productSchema.safeParse({ ...validProduct, price: "gratis" });
+  assert.equal(result.success, false);
+});
+
+test("productSchema rechaza stock negativo", () => {
+  const result = productSchema.safeParse({ ...validProduct, stock: "-3" });
+  assert.equal(result.success, false);
+});
