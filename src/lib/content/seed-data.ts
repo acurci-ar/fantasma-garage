@@ -162,8 +162,8 @@ export const GALLERIES: Gallery[] = [
 export const VIDEOS: Video[] = [
   {
     id: "vid-1",
-    youtube_url: "https://www.youtube.com/@ChevyFantasma",
-    title: "Dentro del taller — episodio destacado",
+    youtube_url: "https://www.youtube.com/watch?v=d_6nfD18LVw",
+    title: "Chip Foose recibe el regalo de Vito en el SEMA 2025",
     thumbnail_url: null,
     featured: true,
     position: 1,
@@ -171,12 +171,21 @@ export const VIDEOS: Video[] = [
   },
   {
     id: "vid-2",
-    youtube_url: "https://www.youtube.com/playlist?list=PL-Li2_2OPYlhQhe5zjqz-qdf2miu3Hdsz",
-    title: "Playlist completa del canal",
+    youtube_url: "https://www.youtube.com/watch?v=dZxXXDndCs8",
+    title: "Chevy serie dos amarillo Daytona con problemitas...",
     thumbnail_url: null,
     featured: true,
     position: 2,
-    source: "playlist",
+    source: "manual",
+  },
+  {
+    id: "vid-3",
+    youtube_url: "https://www.youtube.com/watch?v=TTrOL7TrHn0",
+    title: "Nuevo proyecto Chevy serie dos - Chevy Nova",
+    thumbnail_url: null,
+    featured: true,
+    position: 3,
+    source: "manual",
   },
 ];
 

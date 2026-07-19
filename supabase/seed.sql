@@ -55,8 +55,9 @@ on conflict (slug) do nothing;
 -- =========================================================================
 
 insert into public.videos (youtube_url, title, featured, position, source) values
-  ('https://www.youtube.com/@ChevyFantasma', 'Dentro del taller — episodio destacado', true, 1, 'manual'),
-  ('https://www.youtube.com/playlist?list=PL-Li2_2OPYlhQhe5zjqz-qdf2miu3Hdsz', 'Playlist completa del canal', true, 2, 'playlist');
+  ('https://www.youtube.com/watch?v=d_6nfD18LVw', 'Chip Foose recibe el regalo de Vito en el SEMA 2025', true, 1, 'manual'),
+  ('https://www.youtube.com/watch?v=dZxXXDndCs8', 'Chevy serie dos amarillo Daytona con problemitas...', true, 2, 'manual'),
+  ('https://www.youtube.com/watch?v=TTrOL7TrHn0', 'Nuevo proyecto Chevy serie dos - Chevy Nova', true, 3, 'manual');
 
 -- =========================================================================
 -- Testimonios

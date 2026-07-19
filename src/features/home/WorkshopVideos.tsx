@@ -6,8 +6,6 @@ import { extractYouTubeVideoId } from "@/lib/utils/youtube";
 import type { SiteSettings, Video } from "@/types/database";
 
 export function WorkshopVideos({ videos, settings }: { videos: Video[]; settings: SiteSettings }) {
-  const [main, ...rest] = videos;
-
   return (
     <Section id="videos">
       <div className="flex flex-wrap items-end justify-between gap-6">
@@ -26,19 +24,12 @@ export function WorkshopVideos({ videos, settings }: { videos: Video[]; settings
         </div>
       </div>
 
-      {main && (
-        <div className="mt-12">
-          <YouTubeFacade videoId={extractYouTubeVideoId(main.youtube_url)} title={main.title} />
-          <p className="mt-3 text-sm text-foreground/60">{main.title}</p>
-        </div>
-      )}
-
-      {rest.length > 0 && (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.map((video) => (
+      {videos.length > 0 && (
+        <div className="mt-12 grid grid-cols-3 gap-3 sm:gap-6">
+          {videos.map((video) => (
             <div key={video.id}>
               <YouTubeFacade videoId={extractYouTubeVideoId(video.youtube_url)} title={video.title} />
-              <p className="mt-3 text-sm text-foreground/60">{video.title}</p>
+              <p className="mt-3 line-clamp-2 text-sm text-foreground/60">{video.title}</p>
             </div>
           ))}
         </div>
