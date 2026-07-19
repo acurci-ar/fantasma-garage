@@ -16,7 +16,7 @@ insert into public.site_settings (key, value_json) values
   ('instagram_url', '"https://www.instagram.com/chevyfantasma"'),
   ('youtube_channel_url', '"https://www.youtube.com/@ChevyFantasma"'),
   ('youtube_playlist_url', '"https://www.youtube.com/playlist?list=PL-Li2_2OPYlhQhe5zjqz-qdf2miu3Hdsz"'),
-  ('years_experience', '15'),
+  ('years_experience', '30'),
   ('projects_completed', '80')
 on conflict (key) do nothing;
 
