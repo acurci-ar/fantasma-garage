@@ -45,7 +45,7 @@ on conflict (slug) do nothing;
 -- =========================================================================
 
 insert into public.galleries (slug, title, gallery_type, description, cover_url, status, published_at) values
-  ('sema', 'SEMA', 'sema', 'Cobertura de exhibiciones, tendencias y vehículos del SEMA Show.', '/images/galeria/detalles.webp', 'published', now()),
+  ('sema', 'SEMA', 'sema', 'Cobertura de exhibiciones, tendencias y vehículos del SEMA Show.', '/images/galeria/sema.webp', 'published', now()),
   ('amigos', 'Amigos', 'amigos', 'Comunidad, encuentros y cultura alrededor de los clásicos.', '/images/galeria/mecanica.webp', 'published', now()),
   ('trabajos', 'Trabajos', 'trabajos', 'Procesos, detalles y resultados de Fantasma Garage.', '/images/galeria/chapa.webp', 'published', now())
 on conflict (slug) do nothing;

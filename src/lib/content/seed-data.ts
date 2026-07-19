@@ -130,7 +130,7 @@ export const GALLERIES: Gallery[] = [
     title: "SEMA",
     gallery_type: "sema",
     description: "Cobertura de exhibiciones, tendencias y vehículos del SEMA Show.",
-    cover_url: "/images/galeria/detalles.webp",
+    cover_url: "/images/galeria/sema.webp",
     status: "published",
     published_at: null,
     images: [],
