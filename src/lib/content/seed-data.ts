@@ -64,8 +64,8 @@ export const SERVICES: Service[] = [
 export const PROCESS_STEPS = [
   { key: "diagnostico", title: "Diagnóstico", description: "Relevamiento completo del estado del vehículo y plan de trabajo." },
   { key: "desarme", title: "Desarme", description: "Desarme total documentado, pieza por pieza." },
-  { key: "chapa", title: "Chapa", description: "Corrección de estructura y paneles, imagen: /images/galeria/chapa.webp" },
-  { key: "mecanica", title: "Mecánica", description: "Reconstrucción de motor, caja y tren rodante, imagen: /images/galeria/mecanica.webp" },
+  { key: "chapa", title: "Chapa", description: "Corrección de estructura y paneles." },
+  { key: "mecanica", title: "Mecánica", description: "Reconstrucción de motor, caja y tren rodante." },
   { key: "pintura", title: "Pintura", description: "Preparación de superficie y pintura de acabado premium." },
   { key: "armado", title: "Armado", description: "Ensamblado final, detalles y puesta a punto." },
   { key: "entrega", title: "Entrega", description: "Control de calidad y entrega documentada al propietario." },
