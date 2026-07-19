@@ -19,6 +19,16 @@ export function Hero({ settings }: { settings: SiteSettings }) {
 
       <Container className="relative z-10">
         <div className="max-w-xl">
+          <span className="relative mb-6 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-primary/40 shadow-glow sm:h-24 sm:w-24">
+            <Image
+              src="/images/logo/fantasma-logo-800.webp"
+              alt="Fantasma Garage"
+              fill
+              sizes="96px"
+              priority
+              className="object-cover"
+            />
+          </span>
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
             Restauración de clásicos y muscle cars
           </p>

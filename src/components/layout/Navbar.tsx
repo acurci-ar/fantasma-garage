@@ -41,8 +41,8 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-20 w-full max-w-content items-center justify-between px-5 sm:px-8 lg:px-10">
         <Link href="/" className="flex items-center gap-3" aria-label="Fantasma Garage — Inicio">
-          <span className="relative h-11 w-11 overflow-hidden rounded-full border border-secondary/60">
-            <Image src="/images/logo/fantasma-logo-800.webp" alt="Fantasma Garage" fill sizes="44px" priority />
+          <span className="relative h-14 w-14 overflow-hidden rounded-full border border-secondary/60">
+            <Image src="/images/logo/fantasma-logo-800.webp" alt="Fantasma Garage" fill sizes="56px" priority />
           </span>
           <span className="hidden font-display text-lg uppercase tracking-wide text-foreground sm:block">
             Fantasma Garage
