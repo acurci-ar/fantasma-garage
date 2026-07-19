@@ -8,7 +8,7 @@ import { getServices } from "@/lib/content/queries";
 export const metadata: Metadata = {
   title: "Servicios",
   description:
-    "Restauración integral, mecánica, chapa y pintura, repuestos y proyectos especiales para autos clásicos.",
+    "Restauración integral, mecánica y chapa y pintura para autos clásicos y muscle cars.",
 };
 
 export default async function ServiciosPage() {

@@ -59,26 +59,6 @@ export const SERVICES: Service[] = [
     position: 3,
     status: "published",
   },
-  {
-    id: "svc-4",
-    slug: "repuestos",
-    title: "Repuestos",
-    description:
-      "Búsqueda, importación y fabricación de piezas difíciles de conseguir para modelos clásicos y muscle cars.",
-    image_url: "/images/productos/motor.webp",
-    position: 4,
-    status: "published",
-  },
-  {
-    id: "svc-5",
-    slug: "proyectos-especiales",
-    title: "Proyectos especiales",
-    description:
-      "Restomods y personalizaciones a medida, manteniendo el carácter original del vehículo.",
-    image_url: "/images/galeria/trabajos.webp",
-    position: 5,
-    status: "published",
-  },
 ];
 
 export const PROCESS_STEPS = [
