@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { useCart } from "@/lib/cart/CartContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
@@ -21,6 +22,7 @@ export function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const pathname = usePathname();
+  const { count, openCart } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -86,6 +88,29 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={openCart}
+            className="relative inline-flex h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground transition-colors duration-220 hover:border-primary hover:text-primary"
+            aria-label={count > 0 ? `Carrito, ${count} producto(s)` : "Carrito"}
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path
+                d="M2.5 2.5h1.6l.9 10.2a1.5 1.5 0 0 0 1.5 1.4h7.4a1.5 1.5 0 0 0 1.48-1.24l1.02-5.76a.75.75 0 0 0-.74-.87H5.3"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="7.5" cy="17" r="1.1" fill="currentColor" />
+              <circle cx="13.5" cy="17" r="1.1" fill="currentColor" />
+            </svg>
+            {count > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-background">
+                {count}
+              </span>
+            )}
+          </button>
           <Link
             href="/cuenta"
             className="hidden min-h-[44px] items-center rounded-sm border border-secondary px-4 text-sm font-semibold uppercase tracking-wide text-foreground transition-colors duration-220 hover:border-primary hover:text-primary sm:inline-flex"

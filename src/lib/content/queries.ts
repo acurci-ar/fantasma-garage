@@ -124,6 +124,20 @@ export async function getFeaturedProducts(): Promise<Product[]> {
   }, FEATURED_PRODUCTS);
 }
 
+/** Catálogo completo (sin límite) para /tienda, a diferencia del recorte de 4 del home. */
+export async function getAllProducts(): Promise<Product[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, images:product_images(*), variants:product_variants(*)")
+      .eq("status", "published")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Product[];
+  }, FEATURED_PRODUCTS);
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   return safeQuery(async () => {
     const supabase = await createClient();

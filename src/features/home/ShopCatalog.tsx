@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/utils/format";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import type { Product } from "@/types/database";
 
 /** Catálogo de solo lectura con búsqueda en tiempo real (etapa 1). */
@@ -68,9 +69,12 @@ export function ShopCatalog({ products }: { products: Product[] }) {
                   <h3 className="mt-1 font-display text-sm uppercase tracking-tight text-foreground">
                     {product.name}
                   </h3>
-                  <p className="mt-1 text-sm text-primary">
-                    {formatCurrency(product.sale_price ?? product.price, product.currency)}
-                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-sm text-primary">
+                      {formatCurrency(product.sale_price ?? product.price, product.currency)}
+                    </p>
+                    <AddToCartButton product={product} variant="quick" />
+                  </div>
                 </div>
               </Link>
             );

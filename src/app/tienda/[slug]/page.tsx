@@ -3,12 +3,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Section } from "@/components/ui/Section";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { formatCurrency } from "@/lib/utils/format";
-import { getFeaturedProducts, getProductBySlug } from "@/lib/content/queries";
+import { getAllProducts, getProductBySlug } from "@/lib/content/queries";
 
 export async function generateStaticParams() {
-  const products = await getFeaturedProducts();
+  const products = await getAllProducts();
   return products.map((product) => ({ slug: product.slug }));
 }
 
@@ -90,17 +90,10 @@ export default async function ProductPage({ params }: { params: { slug: string }
           </div>
 
           <div className="mt-8">
-            {outOfStock ? (
-              <span className="inline-flex min-h-[44px] cursor-not-allowed items-center justify-center rounded-sm bg-primary/40 px-8 text-base font-semibold uppercase tracking-wide text-background/70">
-                Sin stock
-              </span>
-            ) : (
-              <Button href="/contacto" size="lg">
-                Consultar disponibilidad
-              </Button>
-            )}
+            <AddToCartButton product={product} />
             <p className="mt-3 text-xs text-foreground/40">
-              El carrito y checkout con Mercado Pago se incorporan en la próxima etapa (ver README).
+              El pago con Mercado Pago se incorpora en una próxima etapa: por ahora el pedido queda
+              registrado como pendiente de pago y te contactamos para coordinarlo.
             </p>
           </div>
 

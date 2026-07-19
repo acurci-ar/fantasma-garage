@@ -3,6 +3,8 @@ import { Oswald, Inter } from "next/font/google";
 import "@/app/globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CartProvider } from "@/lib/cart/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { getSiteSettings } from "@/lib/content/queries";
 
 const displayFont = Oswald({
@@ -76,9 +78,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Saltar al contenido principal
         </a>
-        <Navbar />
-        <main id="main-content">{children}</main>
-        <Footer settings={settings} />
+        <CartProvider>
+          <Navbar />
+          <main id="main-content">{children}</main>
+          <Footer settings={settings} />
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );
