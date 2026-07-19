@@ -38,7 +38,7 @@ async function getKpis(): Promise<Kpi[]> {
     { label: "Productos publicados", value: String(products ?? 0), href: "/admin/productos" },
     { label: "Stock bajo", value: String(lowStockCount), href: "/admin/productos" },
     { label: "Pedidos pendientes de pago", value: String(pendingOrders ?? 0), href: "/admin/pedidos" },
-    { label: "Mensajes nuevos", value: String(newMessages ?? 0) },
+    { label: "Mensajes nuevos", value: String(newMessages ?? 0), href: "/admin/mensajes" },
   ];
 }
 
