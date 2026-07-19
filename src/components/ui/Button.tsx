@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
@@ -34,6 +34,7 @@ interface ButtonAsButton extends CommonProps, ButtonHTMLAttributes<HTMLButtonEle
 interface ButtonAsLink extends CommonProps {
   href: string;
   external?: boolean;
+  children?: ReactNode;
 }
 
 export function Button(props: ButtonAsButton | ButtonAsLink) {
