@@ -21,22 +21,24 @@ export function Hero({ settings }: { settings: SiteSettings }) {
       <div className="relative z-10 flex flex-1 items-center py-10">
         <Container>
           <div className="max-w-xl">
-            <span
-              id="hero-logo"
-              className="relative mb-6 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-primary/40 shadow-glow sm:h-24 sm:w-24"
-            >
-              <Image
-                src="/images/logo/fantasma-logo-800.webp"
-                alt="Fantasma Garage"
-                fill
-                sizes="96px"
-                priority
-                className="object-cover"
-              />
-            </span>
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
-              Restauración de clásicos y muscle cars
-            </p>
+            <div className="mb-6 flex flex-col items-center gap-4 text-center">
+              <span
+                id="hero-logo"
+                className="relative inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-primary/40 shadow-glow sm:h-24 sm:w-24"
+              >
+                <Image
+                  src="/images/logo/fantasma-logo-800.webp"
+                  alt="Fantasma Garage"
+                  fill
+                  sizes="96px"
+                  priority
+                  className="object-cover"
+                />
+              </span>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+                Restauración de clásicos y muscle cars
+              </p>
+            </div>
             <h1 className="font-display text-5xl uppercase leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               Restauramos historia.
             </h1>

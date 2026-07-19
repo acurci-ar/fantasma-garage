@@ -66,10 +66,7 @@ export function Navbar() {
             )}
             aria-hidden={!showLogo}
           >
-            <Image src="/images/logo/fantasma-logo-800.webp" alt="" fill sizes="56px" priority />
-          </span>
-          <span className="hidden font-display text-lg uppercase tracking-wide text-foreground sm:block">
-            Fantasma Garage
+            <Image src="/images/logo/fantasma-logo-800.webp" alt="Fantasma Garage" fill sizes="56px" priority />
           </span>
         </Link>
 
