@@ -99,9 +99,13 @@ export interface Order {
   total: number;
   currency: "ARS" | "USD";
   mp_payment_id: string | null;
+  mp_preference_id: string | null;
   customer_snapshot: Record<string, unknown>;
   shipping_snapshot: Record<string, unknown>;
+  tracking_number: string | null;
+  internal_notes: string | null;
   created_at: ISODateString;
+  updated_at: ISODateString;
 }
 
 export interface OrderItem {
