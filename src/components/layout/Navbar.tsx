@@ -19,6 +19,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -32,6 +33,23 @@ export function Navbar() {
     setDrawerOpen(false);
   }, [pathname]);
 
+  // El logo del navbar solo aparece cuando el logo grande del Hero (si existe en la
+  // página actual) sale de la vista al scrollear. En páginas sin Hero se muestra siempre.
+  useEffect(() => {
+    const heroLogo = document.getElementById("hero-logo");
+    if (!heroLogo) {
+      setShowLogo(true);
+      return;
+    }
+    setShowLogo(false);
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowLogo(!entry?.isIntersecting),
+      { rootMargin: "-80px 0px 0px 0px", threshold: 0 }
+    );
+    observer.observe(heroLogo);
+    return () => observer.disconnect();
+  }, [pathname]);
+
   return (
     <header
       className={cn(
@@ -41,8 +59,14 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-20 w-full max-w-content items-center justify-between px-5 sm:px-8 lg:px-10">
         <Link href="/" className="flex items-center gap-3" aria-label="Fantasma Garage — Inicio">
-          <span className="relative h-14 w-14 overflow-hidden rounded-full border border-secondary/60">
-            <Image src="/images/logo/fantasma-logo-800.webp" alt="Fantasma Garage" fill sizes="56px" priority />
+          <span
+            className={cn(
+              "relative h-14 w-14 overflow-hidden rounded-full border border-secondary/60 transition-opacity duration-320 ease-out motion-reduce:transition-none",
+              showLogo ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!showLogo}
+          >
+            <Image src="/images/logo/fantasma-logo-800.webp" alt="" fill sizes="56px" priority />
           </span>
           <span className="hidden font-display text-lg uppercase tracking-wide text-foreground sm:block">
             Fantasma Garage
