@@ -6,6 +6,7 @@ import { profileSchema } from "../src/lib/validation/account.ts";
 import { newsletterSchema } from "../src/lib/validation/newsletter.ts";
 import { newsletterInterestSchema } from "../src/lib/validation/admin/newsletterInterest.ts";
 import { newsletterSubscriberSchema } from "../src/lib/validation/admin/newsletterSubscriber.ts";
+import { videoSchema } from "../src/lib/validation/admin/video.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -174,6 +175,27 @@ test("newsletterSubscriberSchema rechaza un estado inválido", () => {
     email: "juan@example.com",
     interests: [],
     status: "pendiente",
+  });
+  assert.equal(result.success, false);
+});
+
+test("videoSchema acepta un video válido y castea el orden", () => {
+  const result = videoSchema.safeParse({
+    title: "Restauración de suspensión — parte 1",
+    youtube_url: "https://www.youtube.com/watch?v=abc123",
+    featured: true,
+    position: "2",
+  });
+  assert.equal(result.success, true);
+  if (result.success) assert.equal(result.data.position, 2);
+});
+
+test("videoSchema rechaza una URL que no es de YouTube", () => {
+  const result = videoSchema.safeParse({
+    title: "Video de prueba",
+    youtube_url: "https://vimeo.com/12345",
+    featured: false,
+    position: "0",
   });
   assert.equal(result.success, false);
 });

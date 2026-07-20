@@ -4,7 +4,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { YouTubeFacade } from "@/features/home/YouTubeFacade";
 import { extractYouTubeVideoId } from "@/lib/utils/youtube";
-import { getFeaturedVideos, getSiteSettings } from "@/lib/content/queries";
+import { getChannelPlaylistVideos, getFeaturedVideos, getSiteSettings } from "@/lib/content/queries";
 
 export const metadata: Metadata = {
   title: "Videos",
@@ -12,19 +12,30 @@ export const metadata: Metadata = {
 };
 
 export default async function VideosPage() {
-  const [videos, settings] = await Promise.all([getFeaturedVideos(), getSiteSettings()]);
+  const [settings, playlistVideos, featuredVideos] = await Promise.all([
+    getSiteSettings(),
+    getChannelPlaylistVideos(),
+    getFeaturedVideos(),
+  ]);
 
-  const jsonLdItems = videos
-    .map((video) => {
-      const id = extractYouTubeVideoId(video.youtube_url);
-      if (!id) return null;
+  // Con YOUTUBE_API_KEY configurada se muestra la playlist completa del
+  // canal (ver lib/youtube/playlist.ts); si no, cae a los mismos videos
+  // destacados que la home, como ya funcionaba antes de tener la API.
+  const items =
+    playlistVideos !== null
+      ? playlistVideos.map((v) => ({ key: v.videoId, videoId: v.videoId, title: v.title }))
+      : featuredVideos.map((v) => ({ key: v.id, videoId: extractYouTubeVideoId(v.youtube_url), title: v.title }));
+
+  const jsonLdItems = items
+    .map(({ videoId, title }) => {
+      if (!videoId) return null;
       return {
         "@context": "https://schema.org",
         "@type": "VideoObject",
-        name: video.title,
-        thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        name: title,
+        thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         uploadDate: undefined,
-        embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}`,
       };
     })
     .filter(Boolean);
@@ -43,7 +54,11 @@ export default async function VideosPage() {
         <SectionHeading
           eyebrow="Dentro del taller"
           title="Videos"
-          description="Contenido del canal de YouTube: procesos, entregas y detalles del taller."
+          description={
+            playlistVideos !== null
+              ? "Todos los videos de la playlist del canal: procesos, entregas y detalles del taller."
+              : "Contenido del canal de YouTube: procesos, entregas y detalles del taller."
+          }
         />
         <div className="flex gap-3">
           <Button href={settings.youtube_channel_url} external variant="secondary">
@@ -56,17 +71,17 @@ export default async function VideosPage() {
       </div>
 
       <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {videos.map((video) => (
-          <div key={video.id}>
-            <YouTubeFacade videoId={extractYouTubeVideoId(video.youtube_url)} title={video.title} />
-            <p className="mt-3 text-sm text-foreground/60">{video.title}</p>
+        {items.map((item) => (
+          <div key={item.key}>
+            <YouTubeFacade videoId={item.videoId} title={item.title} />
+            <p className="mt-3 text-sm text-foreground/60">{item.title}</p>
           </div>
         ))}
       </div>
-      {videos.length === 0 && (
+      {items.length === 0 && (
         <p className="mt-6 text-sm text-foreground/50">
-          Todavía no hay videos destacados cargados. Configurá la playlist automática o cargá videos
-          manuales desde /admin.
+          Todavía no hay videos cargados. Configurá la playlist automática (YOUTUBE_API_KEY) o cargá videos
+          destacados manuales desde /admin/videos.
         </p>
       )}
     </Section>

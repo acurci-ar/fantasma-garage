@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { extractPlaylistId, fetchPlaylistVideos, type PlaylistVideo } from "@/lib/youtube/playlist";
 import type { Gallery, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
 import {
   FEATURED_PRODUCTS,
@@ -109,6 +110,29 @@ export async function getFeaturedVideos(): Promise<Video[]> {
     if (error) throw error;
     return (data ?? []) as Video[];
   }, VIDEOS);
+}
+
+/**
+ * Listado completo de la playlist del canal (sección /videos), vía YouTube
+ * Data API v3. Devuelve null si no hay YOUTUBE_API_KEY configurada, la
+ * playlist no se pudo resolver, o la API falló — en cualquiera de esos
+ * casos /videos cae de nuevo a los destacados (getFeaturedVideos), igual
+ * que el resto del sitio cuando algo no está configurado.
+ */
+export async function getChannelPlaylistVideos(): Promise<PlaylistVideo[] | null> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) return null;
+
+  const settings = await getSiteSettings();
+  const playlistId = extractPlaylistId(settings.youtube_playlist_url);
+  if (!playlistId) return null;
+
+  try {
+    return await fetchPlaylistVideos(playlistId, apiKey);
+  } catch (error) {
+    console.warn("[youtube] No se pudo traer la playlist:", (error as Error).message);
+    return null;
+  }
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
