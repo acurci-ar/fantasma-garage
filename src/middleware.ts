@@ -35,7 +35,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (request.nextUrl.pathname.startsWith("/admin") && !user) {
+  const isProtected =
+    request.nextUrl.pathname.startsWith("/admin") || request.nextUrl.pathname.startsWith("/cuenta");
+
+  if (isProtected && !user) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -43,9 +46,9 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// /cuenta queda fuera del matcher: en esta etapa es una vista informativa
-// ("próxima etapa"), no una vista protegida. Se agrega a /admin cuando el
-// panel completo se implemente.
+// /cuenta ahora es el panel de cliente (perfil, pedidos, mensajes), así que
+// exige sesión igual que /admin. La página además redirige a /admin si el
+// usuario logueado es staff.
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/cuenta/:path*"],
 };

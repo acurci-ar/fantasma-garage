@@ -219,6 +219,7 @@ export type ContactMessageStatus = "nuevo" | "en_proceso" | "resuelto";
 
 export interface ContactMessage {
   id: UUID;
+  user_id: UUID | null;
   name: string;
   email: string;
   phone: string | null;

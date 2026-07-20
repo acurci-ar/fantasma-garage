@@ -1,14 +1,146 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ui/ComingSoon";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Section } from "@/components/ui/Section";
+import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Badge } from "@/components/ui/Badge";
+import { ProfileForm } from "@/features/account/ProfileForm";
+import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
+import { ContactForm } from "@/features/home/ContactForm";
+import { formatCurrency, formatDate } from "@/lib/utils/format";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { ContactMessage, Order, Profile } from "@/types/database";
 
-export const metadata: Metadata = { title: "Mi cuenta" };
+export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false, follow: false } };
 
-export default function CuentaPage() {
+const orderStatusLabel: Record<string, string> = {
+  pendiente_pago: "Pendiente de pago",
+  pagado: "Pagado",
+  preparando: "Preparando",
+  enviado: "Enviado",
+  entregado: "Entregado",
+  cancelado: "Cancelado",
+  reembolsado: "Reembolsado",
+};
+
+const messageStatusLabel: Record<string, string> = {
+  nuevo: "Enviado",
+  en_proceso: "En proceso",
+  resuelto: "Resuelto",
+};
+
+/**
+ * Panel de cliente. Si el usuario logueado es staff (admin/editor), se
+ * redirige a /admin — esta pantalla es solo para clientes. La protección
+ * real (sesión + estos redirects) es server-side; el middleware además
+ * exige sesión para /cuenta/:path*.
+ */
+export default async function CuentaPage() {
+  if (!isSupabaseConfigured()) {
+    redirect("/login");
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+  if (profile && (profile.role === "admin" || profile.role === "editor")) {
+    redirect("/admin");
+  }
+
+  const [{ data: orders }, { data: messages }] = await Promise.all([
+    supabase.from("orders").select("*").order("created_at", { ascending: false }),
+    supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
+  ]);
+
+  const typedOrders = (orders ?? []) as Order[];
+  const typedMessages = (messages ?? []) as ContactMessage[];
+
   return (
-    <ComingSoon
-      eyebrow="Próxima etapa"
-      title="Mi cuenta"
-      description="Perfil, direcciones y seguimiento de pedidos se habilitan junto con el checkout de la tienda. Podés iniciar sesión o registrarte desde ya."
-    />
+    <Section className="pt-32">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <SectionHeading eyebrow="Mi cuenta" title={profile?.full_name || user.email || "Tu cuenta"} />
+        <AccountSignOutButton />
+      </div>
+
+      <div className="mt-10 grid gap-10 lg:grid-cols-[320px_1fr]">
+        <div className="h-fit rounded-sm border border-secondary/30 bg-card/40 p-6">
+          <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis datos</h2>
+          <div className="mt-4">
+            <ProfileForm profile={profile as Profile | null} email={user.email ?? ""} />
+          </div>
+        </div>
+
+        <div className="space-y-12">
+          <div>
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis pedidos</h2>
+            {typedOrders.length === 0 ? (
+              <p className="mt-4 text-sm text-foreground/50">
+                Todavía no hiciste ningún pedido con esta cuenta.
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {typedOrders.map((order) => (
+                  <li key={order.id}>
+                    <Link
+                      href={`/cuenta/pedidos/${order.id}`}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-secondary/30 bg-card/40 p-4 transition-colors duration-220 hover:border-primary/60"
+                    >
+                      <div>
+                        <p className="font-display text-sm uppercase tracking-tight text-foreground">
+                          #{order.id.slice(0, 8).toUpperCase()}
+                        </p>
+                        <p className="mt-1 text-xs text-foreground/40">{formatDate(order.created_at)}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-foreground/70">
+                          {formatCurrency(order.total, order.currency)}
+                        </span>
+                        <Badge tone="primary">{orderStatusLabel[order.status] ?? order.status}</Badge>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis mensajes</h2>
+            {typedMessages.length === 0 ? (
+              <p className="mt-4 text-sm text-foreground/50">Todavía no enviaste ningún mensaje.</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {typedMessages.map((message) => (
+                  <li key={message.id} className="rounded-sm border border-secondary/30 bg-card/40 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="font-display text-sm uppercase tracking-tight text-foreground">
+                        {message.subject}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-foreground/40">{formatDate(message.created_at)}</span>
+                        <Badge>{messageStatusLabel[message.status] ?? message.status}</Badge>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-sm text-foreground/70">{message.message}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-6 rounded-sm border border-secondary/30 bg-card/40 p-6">
+              <p className="mb-4 text-xs uppercase tracking-wide text-foreground/50">Enviar un nuevo mensaje</p>
+              <ContactForm />
+            </div>
+          </div>
+        </div>
+      </div>
+    </Section>
   );
 }

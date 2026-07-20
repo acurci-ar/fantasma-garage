@@ -55,7 +55,11 @@ export async function submitContactForm(
   try {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error } = await supabase.from("contact_messages").insert({
+      user_id: user?.id ?? null,
       name: parsed.data.name,
       email: parsed.data.email,
       phone: parsed.data.phone || null,

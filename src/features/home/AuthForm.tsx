@@ -45,12 +45,20 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       if (error) throw error;
 
+      if (mode === "login") {
+        setStatus("success");
+        setMessage("Sesión iniciada correctamente. Redirigiendo...");
+        // Navegación dura (no router.push) para que la página siguiente se
+        // renderice en el servidor ya con la cookie de sesión recién
+        // escrita por el cliente de Supabase, sin depender del cache del
+        // router de Next. /cuenta decide a dónde corresponde ir según el
+        // rol (admin -> /admin, cliente -> el panel de cuenta).
+        window.location.href = "/cuenta";
+        return;
+      }
+
       setStatus("success");
-      setMessage(
-        mode === "login"
-          ? "Sesión iniciada correctamente."
-          : "Cuenta creada. Revisá tu email para confirmar el registro."
-      );
+      setMessage("Cuenta creada. Revisá tu email para confirmar el registro.");
     } catch (error) {
       setStatus("error");
       setMessage((error as Error).message || "Ocurrió un error. Probá de nuevo.");

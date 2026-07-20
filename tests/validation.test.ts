@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { checkoutFormSchema } from "../src/lib/validation/checkout.ts";
 import { productSchema } from "../src/lib/validation/product.ts";
+import { profileSchema } from "../src/lib/validation/account.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -87,5 +88,20 @@ test("productSchema rechaza precio no numérico", () => {
 
 test("productSchema rechaza stock negativo", () => {
   const result = productSchema.safeParse({ ...validProduct, stock: "-3" });
+  assert.equal(result.success, false);
+});
+
+test("profileSchema acepta nombre y teléfono válidos", () => {
+  const result = profileSchema.safeParse({ full_name: "Juan Pérez", phone: "1122334455" });
+  assert.equal(result.success, true);
+});
+
+test("profileSchema acepta teléfono vacío (opcional)", () => {
+  const result = profileSchema.safeParse({ full_name: "Juan Pérez", phone: "" });
+  assert.equal(result.success, true);
+});
+
+test("profileSchema rechaza nombre demasiado corto", () => {
+  const result = profileSchema.safeParse({ full_name: "J", phone: "" });
   assert.equal(result.success, false);
 });
