@@ -13,10 +13,27 @@ export type ISODateString = string;
 
 export type Role = "admin" | "editor" | "customer";
 
+export type NewsletterInterest = "marcas" | "modelos" | "juntadas" | "eventos";
+
+export interface NewsletterSubscriber {
+  id: UUID;
+  email: string;
+  interests: NewsletterInterest[];
+  user_id: UUID | null;
+  status: "activo" | "baja";
+  created_at: ISODateString;
+  updated_at: ISODateString;
+}
+
 export interface Profile {
   id: UUID;
   full_name: string | null;
   phone: string | null;
+  document_number: string | null;
+  shipping_street: string | null;
+  shipping_city: string | null;
+  shipping_province: string | null;
+  shipping_postal_code: string | null;
   role: Role;
   created_at: ISODateString;
 }

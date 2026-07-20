@@ -60,6 +60,84 @@ export function ProfileForm({ profile, email }: { profile: Profile | null; email
         <FieldError errors={state.fieldErrors?.phone} />
       </div>
 
+      <div>
+        <label htmlFor="document_number" className={labelClasses}>
+          Documento (opcional)
+        </label>
+        <input
+          id="document_number"
+          name="document_number"
+          type="text"
+          defaultValue={profile?.document_number ?? ""}
+          className={inputClasses}
+        />
+        <FieldError errors={state.fieldErrors?.document_number} />
+      </div>
+
+      <div className="border-t border-secondary/20 pt-5">
+        <p className="mb-4 text-xs uppercase tracking-wide text-foreground/50">
+          Dirección de envío (opcional, para no volver a escribirla en cada pedido)
+        </p>
+
+        <div className="space-y-5">
+          <div>
+            <label htmlFor="shipping_street" className={labelClasses}>
+              Calle y número
+            </label>
+            <input
+              id="shipping_street"
+              name="shipping_street"
+              type="text"
+              defaultValue={profile?.shipping_street ?? ""}
+              className={inputClasses}
+            />
+            <FieldError errors={state.fieldErrors?.shipping_street} />
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div>
+              <label htmlFor="shipping_city" className={labelClasses}>
+                Localidad
+              </label>
+              <input
+                id="shipping_city"
+                name="shipping_city"
+                type="text"
+                defaultValue={profile?.shipping_city ?? ""}
+                className={inputClasses}
+              />
+              <FieldError errors={state.fieldErrors?.shipping_city} />
+            </div>
+            <div>
+              <label htmlFor="shipping_province" className={labelClasses}>
+                Provincia
+              </label>
+              <input
+                id="shipping_province"
+                name="shipping_province"
+                type="text"
+                defaultValue={profile?.shipping_province ?? ""}
+                className={inputClasses}
+              />
+              <FieldError errors={state.fieldErrors?.shipping_province} />
+            </div>
+            <div>
+              <label htmlFor="shipping_postal_code" className={labelClasses}>
+                Código postal
+              </label>
+              <input
+                id="shipping_postal_code"
+                name="shipping_postal_code"
+                type="text"
+                defaultValue={profile?.shipping_postal_code ?? ""}
+                className={inputClasses}
+              />
+              <FieldError errors={state.fieldErrors?.shipping_postal_code} />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton />
         {state.status !== "idle" && (

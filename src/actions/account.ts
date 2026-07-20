@@ -23,6 +23,11 @@ export async function updateProfile(
   const parsed = profileSchema.safeParse({
     full_name: String(formData.get("full_name") ?? ""),
     phone: String(formData.get("phone") ?? ""),
+    document_number: String(formData.get("document_number") ?? ""),
+    shipping_street: String(formData.get("shipping_street") ?? ""),
+    shipping_city: String(formData.get("shipping_city") ?? ""),
+    shipping_province: String(formData.get("shipping_province") ?? ""),
+    shipping_postal_code: String(formData.get("shipping_postal_code") ?? ""),
   });
 
   if (!parsed.success) {
@@ -44,7 +49,15 @@ export async function updateProfile(
 
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: parsed.data.full_name, phone: parsed.data.phone || null })
+    .update({
+      full_name: parsed.data.full_name,
+      phone: parsed.data.phone || null,
+      document_number: parsed.data.document_number || null,
+      shipping_street: parsed.data.shipping_street || null,
+      shipping_city: parsed.data.shipping_city || null,
+      shipping_province: parsed.data.shipping_province || null,
+      shipping_postal_code: parsed.data.shipping_postal_code || null,
+    })
     .eq("id", user.id);
 
   if (error) {

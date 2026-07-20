@@ -9,9 +9,13 @@ const inputClasses =
 
 interface AuthFormProps {
   mode: "login" | "register";
+  /** A dónde ir tras un login exitoso. Por defecto /cuenta, que a su vez
+   * decide admin -> /admin o cliente -> panel. Si viene de /checkout (login
+   * forzado antes de confirmar un pedido), vuelve directo ahí. */
+  redirectTo?: string;
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -51,14 +55,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         // Navegación dura (no router.push) para que la página siguiente se
         // renderice en el servidor ya con la cookie de sesión recién
         // escrita por el cliente de Supabase, sin depender del cache del
-        // router de Next. /cuenta decide a dónde corresponde ir según el
-        // rol (admin -> /admin, cliente -> el panel de cuenta).
-        window.location.href = "/cuenta";
+        // router de Next. Por defecto /cuenta decide a dónde corresponde ir
+        // según el rol; si venimos de un checkout forzado, redirectTo
+        // apunta directo ahí.
+        window.location.href = redirectTo;
         return;
       }
 
       setStatus("success");
-      setMessage("Cuenta creada. Revisá tu email para confirmar el registro.");
+      setMessage(
+        redirectTo === "/cuenta"
+          ? "Cuenta creada. Revisá tu email para confirmar el registro."
+          : "Cuenta creada. Revisá tu email para confirmar el registro y después iniciá sesión de nuevo para continuar tu pedido."
+      );
     } catch (error) {
       setStatus("error");
       setMessage((error as Error).message || "Ocurrió un error. Probá de nuevo.");
@@ -102,14 +111,20 @@ export function AuthForm({ mode }: AuthFormProps) {
         {mode === "login" ? (
           <>
             ¿No tenés cuenta?{" "}
-            <Link href="/registro" className="text-primary hover:underline">
+            <Link
+              href={redirectTo === "/cuenta" ? "/registro" : `/registro?redirect=${encodeURIComponent(redirectTo)}`}
+              className="text-primary hover:underline"
+            >
               Registrate
             </Link>
           </>
         ) : (
           <>
             ¿Ya tenés cuenta?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={redirectTo === "/cuenta" ? "/login" : `/login?redirect=${encodeURIComponent(redirectTo)}`}
+              className="text-primary hover:underline"
+            >
               Iniciá sesión
             </Link>
           </>

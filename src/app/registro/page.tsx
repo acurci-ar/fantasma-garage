@@ -3,16 +3,19 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Panel } from "@/components/ui/Card";
 import { AuthForm } from "@/features/home/AuthForm";
+import { sanitizeRedirect } from "@/lib/utils/redirect";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
 
-export default function RegistroPage() {
+export default function RegistroPage({ searchParams }: { searchParams: { redirect?: string } }) {
+  const redirectTo = sanitizeRedirect(searchParams.redirect);
+
   return (
     <Section className="flex min-h-[80vh] items-center pt-32">
       <div className="mx-auto w-full max-w-sm">
         <SectionHeading eyebrow="Mi cuenta" title="Crear cuenta" align="center" />
         <Panel className="mt-8">
-          <AuthForm mode="register" />
+          <AuthForm mode="register" redirectTo={redirectTo} />
         </Panel>
       </div>
     </Section>

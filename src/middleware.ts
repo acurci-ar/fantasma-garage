@@ -35,20 +35,27 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
   const isProtected =
-    request.nextUrl.pathname.startsWith("/admin") || request.nextUrl.pathname.startsWith("/cuenta");
+    pathname.startsWith("/admin") || pathname.startsWith("/cuenta") || pathname.startsWith("/checkout");
 
   if (isProtected && !user) {
     const loginUrl = new URL("/login", request.url);
+    // En /checkout forzamos login antes de dejar pasar (sin checkout de
+    // invitado): guardamos a dónde volver para no perder el carrito de
+    // vista una vez que inicie sesión o confirme el registro.
+    if (pathname.startsWith("/checkout")) {
+      loginUrl.searchParams.set("redirect", "/checkout");
+    }
     return NextResponse.redirect(loginUrl);
   }
 
   return response;
 }
 
-// /cuenta ahora es el panel de cliente (perfil, pedidos, mensajes), así que
-// exige sesión igual que /admin. La página además redirige a /admin si el
-// usuario logueado es staff.
+// /cuenta (panel de cliente) y /checkout (para que todo pedido quede ligado
+// a un usuario) exigen sesión igual que /admin. /cuenta además redirige a
+// /admin si el usuario logueado es staff.
 export const config = {
-  matcher: ["/admin/:path*", "/cuenta/:path*"],
+  matcher: ["/admin/:path*", "/cuenta/:path*", "/checkout"],
 };

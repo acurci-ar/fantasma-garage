@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { NewsletterForm } from "@/features/home/NewsletterForm";
 import type { SiteSettings } from "@/types/database";
 
 const SECONDARY_LINKS = [
@@ -15,6 +16,20 @@ const SECONDARY_LINKS = [
 export function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <footer className="border-t border-secondary/30 bg-background">
+      <div className="border-b border-secondary/20 bg-card/20">
+        <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+          <div>
+            <h3 className="font-display text-lg uppercase tracking-wide text-foreground">
+              Recibí novedades
+            </h3>
+            <p className="mt-2 max-w-sm text-sm text-foreground/60">
+              Enterate de restauraciones terminadas, juntadas y eventos antes que nadie.
+            </p>
+          </div>
+          <NewsletterForm />
+        </Container>
+      </div>
+
       <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="flex items-center gap-3" aria-label="Fantasma Garage — Inicio">

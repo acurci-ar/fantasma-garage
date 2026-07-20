@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { checkoutFormSchema } from "../src/lib/validation/checkout.ts";
 import { productSchema } from "../src/lib/validation/product.ts";
 import { profileSchema } from "../src/lib/validation/account.ts";
+import { newsletterSchema } from "../src/lib/validation/newsletter.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -103,5 +104,26 @@ test("profileSchema acepta teléfono vacío (opcional)", () => {
 
 test("profileSchema rechaza nombre demasiado corto", () => {
   const result = profileSchema.safeParse({ full_name: "J", phone: "" });
+  assert.equal(result.success, false);
+});
+
+test("newsletterSchema acepta email con intereses seleccionados", () => {
+  const result = newsletterSchema.safeParse({ email: "juan@example.com", interests: ["marcas", "eventos"] });
+  assert.equal(result.success, true);
+});
+
+test("newsletterSchema acepta email sin intereses (default vacío)", () => {
+  const result = newsletterSchema.safeParse({ email: "juan@example.com" });
+  assert.equal(result.success, true);
+  if (result.success) assert.deepEqual(result.data.interests, []);
+});
+
+test("newsletterSchema rechaza email inválido", () => {
+  const result = newsletterSchema.safeParse({ email: "no-es-un-email", interests: [] });
+  assert.equal(result.success, false);
+});
+
+test("newsletterSchema rechaza un interés fuera del set permitido", () => {
+  const result = newsletterSchema.safeParse({ email: "juan@example.com", interests: ["descuentos"] });
   assert.equal(result.success, false);
 });
