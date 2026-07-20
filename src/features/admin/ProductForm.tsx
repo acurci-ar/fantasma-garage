@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { slugify } from "@/lib/utils/format";
+import { formatBytes, isImageTooHeavy, exceedsHardLimit, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
 import type { Product } from "@/types/database";
 import type { ProductActionState } from "@/actions/admin/products";
 
@@ -47,6 +49,59 @@ export function ProductForm({
   }, [name, slugTouched]);
 
   const image = product?.images?.[0];
+
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileWarning, setFileWarning] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+    };
+  }, [filePreview]);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setFileWarning(null);
+    setFileError(null);
+
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+      setFilePreview(null);
+    }
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setFileError("El archivo tiene que ser una imagen.");
+      e.target.value = "";
+      return;
+    }
+
+    if (exceedsHardLimit(file.size)) {
+      setFileError(
+        `Pesa ${formatBytes(file.size)}. El máximo permitido es ${formatBytes(MAX_PRODUCT_IMAGE_BYTES)}: elegí una imagen más liviana.`
+      );
+      e.target.value = "";
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setFilePreview(objectUrl);
+    // Si se elige un archivo, tiene prioridad sobre la URL pegada a mano.
+    if (urlInputRef.current) urlInputRef.current.value = "";
+
+    const probe = document.createElement("img");
+    probe.onload = () => {
+      if (isImageTooHeavy(file.size, probe.naturalWidth, probe.naturalHeight)) {
+        setFileWarning(
+          `Pesa ${formatBytes(file.size)} (${probe.naturalWidth}×${probe.naturalHeight}px). Para que la web cargue rápido conviene achicarla a menos de ${formatBytes(400 * 1024)} y no más de 2000px de lado. Se puede subir igual.`
+        );
+      }
+    };
+    probe.src = objectUrl;
+  }
 
   return (
     <form action={formAction} className="space-y-6">
@@ -212,24 +267,82 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="image_url" className={labelClasses}>
-            Imagen (ruta o URL)
-          </label>
-          <input
-            id="image_url"
-            name="image_url"
-            type="text"
-            placeholder="/images/productos/ejemplo.webp"
-            defaultValue={image?.url ?? ""}
-            className={inputClasses}
-          />
-          <FieldError errors={state.fieldErrors?.image_url} />
-          <p className="mt-1 text-xs text-foreground/40">
-            No hay subida de archivos todavía: pegá una ruta ya existente en /public/images o una URL externa.
-          </p>
+      <div className="space-y-5 rounded-sm border border-secondary/30 p-5">
+        <p className={labelClasses}>Imagen del producto</p>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="relative -top-px inline-flex h-32 w-32 items-center justify-center overflow-hidden rounded-sm bg-card">
+                {(() => {
+                  const previewSrc = filePreview ?? image?.url;
+                  if (!previewSrc) {
+                    return <span className="text-[11px] text-foreground/30">Sin imagen</span>;
+                  }
+                  return (
+                    <Image
+                      src={previewSrc}
+                      alt=""
+                      fill
+                      sizes="128px"
+                      className="object-cover"
+                      unoptimized={Boolean(filePreview)}
+                    />
+                  );
+                })()}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="image_file" className={labelClasses}>
+                Subir un archivo
+              </label>
+              <input
+                id="image_file"
+                name="image_file"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="block w-full text-sm text-foreground/70 file:mr-4 file:rounded-sm file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-background hover:file:bg-primary/90"
+              />
+              {fileError && <p className="mt-2 text-xs text-red-400">{fileError}</p>}
+              {fileWarning && !fileError && <p className="mt-2 text-xs text-primary">{fileWarning}</p>}
+              <p className="mt-2 text-xs text-foreground/40">Máximo {formatBytes(MAX_PRODUCT_IMAGE_BYTES)}.</p>
+            </div>
+
+            <div>
+              <label htmlFor="image_url" className={labelClasses}>
+                ...o pegar una ruta/URL en su lugar
+              </label>
+              <input
+                ref={urlInputRef}
+                id="image_url"
+                name="image_url"
+                type="text"
+                placeholder="/images/productos/ejemplo.webp"
+                defaultValue={image?.url ?? ""}
+                onFocus={() => {
+                  // Si el staff vuelve a tocar la URL, que gane ella sobre el archivo elegido antes.
+                  if (filePreview) {
+                    URL.revokeObjectURL(filePreview);
+                    setFilePreview(null);
+                    setFileWarning(null);
+                    const fileInput = document.getElementById("image_file") as HTMLInputElement | null;
+                    if (fileInput) fileInput.value = "";
+                  }
+                }}
+                className={inputClasses}
+              />
+              <FieldError errors={state.fieldErrors?.image_url} />
+              <p className="mt-2 text-xs text-foreground/40">
+                Si subís un archivo, tiene prioridad sobre esta URL.
+              </p>
+            </div>
+          </div>
         </div>
+
         <div>
           <label htmlFor="image_alt" className={labelClasses}>
             Texto alternativo de la imagen
