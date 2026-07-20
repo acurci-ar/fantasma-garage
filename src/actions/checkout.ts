@@ -64,7 +64,20 @@ export async function createOrder(input: unknown): Promise<CheckoutActionState> 
       .select("id, name, sku, price, sale_price, currency, stock, status")
       .in("id", productIds);
 
-    if (productsError) throw productsError;
+    if (productsError) {
+      // 22P02: "invalid input syntax for type uuid" — pasa si el carrito
+      // guardado en localStorage viene de un momento en que el sitio corría
+      // en modo demo (ids como "prod-1") y ahora Supabase ya está
+      // configurado. El id ya no existe como producto real.
+      if (productsError.code === "22P02") {
+        return {
+          status: "error",
+          message:
+            "Tu carrito tiene productos de una versión anterior del catálogo. Vaciá el carrito y agregalos de nuevo.",
+        };
+      }
+      throw productsError;
+    }
 
     const productMap = new Map((products ?? []).map((p) => [p.id as string, p]));
 

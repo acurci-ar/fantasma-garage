@@ -30,10 +30,21 @@ test("checkoutFormSchema rechaza email inválido", () => {
   assert.equal(result.success, false);
 });
 
-test("checkoutFormSchema rechaza productId que no es UUID", () => {
+test("checkoutFormSchema acepta ids de producto en modo demo (no UUID)", () => {
+  // Con Supabase sin configurar, seed-data.ts usa ids como "prod-1": la
+  // validación de formato no debe rechazarlos acá, sino la Server Action
+  // (que revisa contra la base real y explica el motivo real).
   const result = checkoutFormSchema.safeParse({
     ...validCheckout,
-    items: [{ productId: "no-es-uuid", variantId: null, quantity: 1 }],
+    items: [{ productId: "prod-1", variantId: null, quantity: 1 }],
+  });
+  assert.equal(result.success, true);
+});
+
+test("checkoutFormSchema rechaza productId vacío", () => {
+  const result = checkoutFormSchema.safeParse({
+    ...validCheckout,
+    items: [{ productId: "", variantId: null, quantity: 1 }],
   });
   assert.equal(result.success, false);
 });

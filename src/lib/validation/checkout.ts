@@ -1,8 +1,14 @@
 import { z } from "zod";
 
 export const checkoutItemSchema = z.object({
-  productId: z.string().uuid(),
-  variantId: z.string().uuid().nullable(),
+  // No se exige formato UUID acá: en modo demo (Supabase sin configurar)
+  // los productos seed usan ids como "prod-1". La validación real de que
+  // el producto exista pasa server-side, contra la base, en
+  // actions/checkout.ts — así el usuario ve el motivo real ("Supabase no
+  // está configurado" o "producto no disponible") en vez de un genérico
+  // "revisá los datos del formulario".
+  productId: z.string().min(1, "Producto inválido."),
+  variantId: z.string().min(1).nullable(),
   quantity: z.number().int().min(1).max(99),
 });
 
