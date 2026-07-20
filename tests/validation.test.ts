@@ -4,6 +4,8 @@ import { checkoutFormSchema } from "../src/lib/validation/checkout.ts";
 import { productSchema } from "../src/lib/validation/product.ts";
 import { profileSchema } from "../src/lib/validation/account.ts";
 import { newsletterSchema } from "../src/lib/validation/newsletter.ts";
+import { newsletterInterestSchema } from "../src/lib/validation/admin/newsletterInterest.ts";
+import { newsletterSubscriberSchema } from "../src/lib/validation/admin/newsletterSubscriber.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -123,7 +125,55 @@ test("newsletterSchema rechaza email inválido", () => {
   assert.equal(result.success, false);
 });
 
-test("newsletterSchema rechaza un interés fuera del set permitido", () => {
-  const result = newsletterSchema.safeParse({ email: "juan@example.com", interests: ["descuentos"] });
+test("newsletterSchema acepta cualquier slug de interés (la pertenencia se valida server-side)", () => {
+  // Los intereses ya no son un enum fijo (ver newsletter_interests, editable
+  // desde /admin/newsletter/intereses): el schema solo valida forma, no que
+  // el slug exista o esté activo — eso lo resuelve subscribeNewsletter
+  // consultando la tabla.
+  const result = newsletterSchema.safeParse({ email: "juan@example.com", interests: ["chevy-nova"] });
+  assert.equal(result.success, true);
+});
+
+test("newsletterSchema rechaza un interés vacío", () => {
+  const result = newsletterSchema.safeParse({ email: "juan@example.com", interests: [""] });
+  assert.equal(result.success, false);
+});
+
+test("newsletterInterestSchema acepta un tag válido y castea el orden", () => {
+  const result = newsletterInterestSchema.safeParse({
+    slug: "chevy-nova",
+    label: "Chevy Nova",
+    active: true,
+    sort_order: "3",
+  });
+  assert.equal(result.success, true);
+  if (result.success) assert.equal(result.data.sort_order, 3);
+});
+
+test("newsletterInterestSchema rechaza un slug con mayúsculas o espacios", () => {
+  const result = newsletterInterestSchema.safeParse({
+    slug: "Chevy Nova",
+    label: "Chevy Nova",
+    active: true,
+    sort_order: "0",
+  });
+  assert.equal(result.success, false);
+});
+
+test("newsletterSubscriberSchema acepta un suscriptor válido", () => {
+  const result = newsletterSubscriberSchema.safeParse({
+    email: "juan@example.com",
+    interests: ["eventos"],
+    status: "activo",
+  });
+  assert.equal(result.success, true);
+});
+
+test("newsletterSubscriberSchema rechaza un estado inválido", () => {
+  const result = newsletterSubscriberSchema.safeParse({
+    email: "juan@example.com",
+    interests: [],
+    status: "pendiente",
+  });
   assert.equal(result.success, false);
 });

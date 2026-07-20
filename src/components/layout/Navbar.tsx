@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { useCart } from "@/lib/cart/CartContext";
+import { useNewsletterModal } from "@/lib/newsletter/NewsletterModalContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
@@ -28,6 +29,7 @@ export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
   const { count, openCart } = useCart();
+  const { openModal: openNewsletter } = useNewsletterModal();
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -121,6 +123,24 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           <button
             type="button"
+            onClick={openNewsletter}
+            className="hidden h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground transition-colors duration-220 hover:border-primary hover:text-primary sm:inline-flex"
+            aria-label="Suscribirme al newsletter"
+            title="Suscribirme al newsletter"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="2.5" y="4.5" width="15" height="11" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+              <path
+                d="M3 5.5l7 5.5 7-5.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
             onClick={openCart}
             className="relative inline-flex h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground transition-colors duration-220 hover:border-primary hover:text-primary"
             aria-label={count > 0 ? `Carrito, ${count} producto(s)` : "Carrito"}
@@ -191,6 +211,16 @@ export function Navbar() {
           >
             {isLoggedIn ? "Mi cuenta" : "Ingresar"}
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setDrawerOpen(false);
+              openNewsletter();
+            }}
+            className="flex min-h-[44px] items-center text-base font-medium uppercase tracking-wide text-foreground/85 hover:text-primary"
+          >
+            Suscribirme al newsletter
+          </button>
         </nav>
       </div>
     </header>

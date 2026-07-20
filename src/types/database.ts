@@ -13,12 +13,21 @@ export type ISODateString = string;
 
 export type Role = "admin" | "editor" | "customer";
 
-export type NewsletterInterest = "marcas" | "modelos" | "juntadas" | "eventos";
+export interface NewsletterInterestTag {
+  id: UUID;
+  slug: string;
+  label: string;
+  active: boolean;
+  sort_order: number;
+  created_at: ISODateString;
+}
 
 export interface NewsletterSubscriber {
   id: UUID;
   email: string;
-  interests: NewsletterInterest[];
+  /** Slugs de newsletter_interests. Texto libre a nivel de columna (no FK);
+   * se valida contra la tabla de intereses en la capa de aplicación. */
+  interests: string[];
   user_id: UUID | null;
   status: "activo" | "baja";
   created_at: ISODateString;

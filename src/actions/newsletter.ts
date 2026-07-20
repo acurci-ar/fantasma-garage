@@ -2,11 +2,32 @@
 
 import { newsletterSchema } from "@/lib/validation/newsletter";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import type { NewsletterInterestTag } from "@/types/database";
 
 export interface NewsletterActionState {
   status: "idle" | "success" | "error";
   message: string;
   fieldErrors?: Record<string, string[]>;
+}
+
+/**
+ * Lista de intereses activos para pintar los checkboxes del formulario
+ * público. Se llama directamente desde el cliente (NewsletterForm), no
+ * atada a un <form>: los Server Actions también funcionan como un RPC común
+ * cuando se los invoca así.
+ */
+export async function getActiveNewsletterInterests(): Promise<NewsletterInterestTag[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("newsletter_interests")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+
+  return (data ?? []) as NewsletterInterestTag[];
 }
 
 /**
@@ -39,7 +60,8 @@ export async function subscribeNewsletter(
   if (!isSupabaseConfigured()) {
     return {
       status: "error",
-      message: "Supabase no está configurado en este entorno (modo demo), así que no podemos guardar tu suscripción todavía.",
+      message:
+        "Supabase no está configurado en este entorno (modo demo), así que no podemos guardar tu suscripción todavía.",
     };
   }
 
@@ -50,10 +72,23 @@ export async function subscribeNewsletter(
       data: { user },
     } = await supabase.auth.getUser();
 
+    // Solo se guardan intereses que existen y siguen activos: evita basura
+    // si el formulario quedó cacheado en el navegador con tags viejos que
+    // ya no existen o se desactivaron.
+    let interests: string[] = [];
+    if (parsed.data.interests.length > 0) {
+      const { data: validInterests } = await supabase
+        .from("newsletter_interests")
+        .select("slug")
+        .eq("active", true)
+        .in("slug", parsed.data.interests);
+      interests = (validInterests ?? []).map((row) => row.slug as string);
+    }
+
     const { error } = await supabase.from("newsletter_subscribers").upsert(
       {
         email: parsed.data.email,
-        interests: parsed.data.interests,
+        interests,
         user_id: user?.id ?? null,
         status: "activo",
         updated_at: new Date().toISOString(),

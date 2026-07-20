@@ -5,6 +5,7 @@ import { FeaturedProjects } from "@/features/home/FeaturedProjects";
 import { GalleriesShowcase } from "@/features/home/GalleriesShowcase";
 import { WorkshopVideos } from "@/features/home/WorkshopVideos";
 import { FeaturedShop } from "@/features/home/FeaturedShop";
+import { NewsletterCta } from "@/features/home/NewsletterCta";
 import { ContactSection } from "@/features/home/ContactSection";
 import {
   getFeaturedProducts,
@@ -34,6 +35,7 @@ export default async function HomePage() {
       <GalleriesShowcase galleries={galleries} />
       <WorkshopVideos videos={videos} settings={settings} />
       <FeaturedShop products={products} />
+      <NewsletterCta />
       <ContactSection settings={settings} />
     </>
   );

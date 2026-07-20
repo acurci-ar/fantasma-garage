@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
-import { NewsletterForm } from "@/features/home/NewsletterForm";
+import { NewsletterCtaButton } from "@/features/home/NewsletterCtaButton";
 import type { SiteSettings } from "@/types/database";
 
 const SECONDARY_LINKS = [
@@ -17,7 +17,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <footer className="border-t border-secondary/30 bg-background">
       <div className="border-b border-secondary/20 bg-card/20">
-        <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+        <Container className="flex flex-wrap items-center justify-between gap-6 py-10">
           <div>
             <h3 className="font-display text-lg uppercase tracking-wide text-foreground">
               Recibí novedades
@@ -26,7 +26,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
               Enterate de restauraciones terminadas, juntadas y eventos antes que nadie.
             </p>
           </div>
-          <NewsletterForm />
+          <NewsletterCtaButton>Quiero recibir novedades</NewsletterCtaButton>
         </Container>
       </div>
 

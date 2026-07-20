@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { subscribeNewsletter, type NewsletterActionState } from "@/actions/newsletter";
-import { NEWSLETTER_INTERESTS, NEWSLETTER_INTEREST_LABELS } from "@/lib/validation/newsletter";
+import { subscribeNewsletter, getActiveNewsletterInterests, type NewsletterActionState } from "@/actions/newsletter";
 import { Button } from "@/components/ui/Button";
+import type { NewsletterInterestTag } from "@/types/database";
 
 const initialState: NewsletterActionState = { status: "idle", message: "" };
 
@@ -21,6 +22,13 @@ function SubmitButton() {
 
 export function NewsletterForm() {
   const [state, formAction] = useFormState(subscribeNewsletter, initialState);
+  const [interests, setInterests] = useState<NewsletterInterestTag[]>([]);
+
+  // Los tags se administran desde /admin/newsletter/intereses, así que se
+  // traen en vivo en vez de tener una lista fija en el código.
+  useEffect(() => {
+    getActiveNewsletterInterests().then(setInterests);
+  }, []);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -41,24 +49,26 @@ export function NewsletterForm() {
         )}
       </div>
 
-      <fieldset>
-        <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
-          Áreas de interés (opcional)
-        </legend>
-        <div className="grid grid-cols-2 gap-2">
-          {NEWSLETTER_INTERESTS.map((interest) => (
-            <label key={interest} className="flex items-center gap-2 text-sm text-foreground/70">
-              <input
-                type="checkbox"
-                name="interests"
-                value={interest}
-                className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
-              />
-              {NEWSLETTER_INTEREST_LABELS[interest]}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {interests.length > 0 && (
+        <fieldset>
+          <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
+            Áreas de interés (opcional)
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            {interests.map((interest) => (
+              <label key={interest.id} className="flex items-center gap-2 text-sm text-foreground/70">
+                <input
+                  type="checkbox"
+                  name="interests"
+                  value={interest.slug}
+                  className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
+                />
+                {interest.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton />
