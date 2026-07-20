@@ -21,8 +21,39 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
+  // Arranca en false (mismo estado que un visitante sin sesión) para que el
+  // primer render coincida con el del servidor; se corrige apenas se puede
+  // leer la sesión del browser, sin esperar respuesta de red (getSession lee
+  // la cookie local).
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
   const { count, openCart } = useCart();
+
+  useEffect(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anonKey) return; // modo demo: nunca hay sesión real
+
+    let active = true;
+    let unsubscribe = () => {};
+
+    (async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (active) setIsLoggedIn(!!data.session);
+
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (active) setIsLoggedIn(!!session);
+      });
+      unsubscribe = () => listener.subscription.unsubscribe();
+    })();
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -112,10 +143,10 @@ export function Navbar() {
             )}
           </button>
           <Link
-            href="/cuenta"
+            href={isLoggedIn ? "/cuenta" : "/login"}
             className="hidden min-h-[44px] items-center rounded-sm border border-secondary px-4 text-sm font-semibold uppercase tracking-wide text-foreground transition-colors duration-220 hover:border-primary hover:text-primary sm:inline-flex"
           >
-            Mi cuenta
+            {isLoggedIn ? "Mi cuenta" : "Ingresar"}
           </Link>
           <button
             type="button"
@@ -155,10 +186,10 @@ export function Navbar() {
             </Link>
           ))}
           <Link
-            href="/cuenta"
+            href={isLoggedIn ? "/cuenta" : "/login"}
             className="mt-2 flex min-h-[44px] items-center border-t border-secondary/30 pt-3 text-base font-medium uppercase tracking-wide text-primary"
           >
-            Mi cuenta
+            {isLoggedIn ? "Mi cuenta" : "Ingresar"}
           </Link>
         </nav>
       </div>
