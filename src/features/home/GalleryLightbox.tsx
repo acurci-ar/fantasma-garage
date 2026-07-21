@@ -1,12 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import Image from "next/image";
+import { Button } from "@/components/ui/Button";
 import type { GalleryImage } from "@/types/database";
 
-/** Grid masonry-like + lightbox accesible con navegación por teclado. */
-export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
+interface GalleryLightboxProps {
+  /** Primera página de fotos (ver GALLERY_PAGE_SIZE en lib/content/queries.ts). */
+  images: GalleryImage[];
+  /** Total de fotos publicadas en la galería, para saber si queda algo por cargar. */
+  totalCount: number;
+  /** id de la galería, para pedir la siguiente tanda. */
+  galleryId: string;
+  /** Server action que trae la siguiente tanda (ver actions/gallery.ts). */
+  loadMoreAction: (galleryId: string, offset: number) => Promise<GalleryImage[]>;
+}
+
+/** Grid masonry-like + lightbox accesible con navegación por teclado, con
+ * carga incremental ("Cargar más") para galerías de cientos de fotos. */
+export function GalleryLightbox({ images: initialImages, totalCount, galleryId, loadMoreAction }: GalleryLightboxProps) {
+  const [images, setImages] = useState(initialImages);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const hasMore = images.length < totalCount;
+
+  const loadMore = useCallback(() => {
+    startTransition(async () => {
+      const nextImages = await loadMoreAction(galleryId, images.length);
+      setImages((prev) => [...prev, ...nextImages]);
+    });
+  }, [galleryId, images.length, loadMoreAction]);
 
   const close = useCallback(() => setActiveIndex(null), []);
   const next = useCallback(
@@ -56,6 +80,17 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
           </button>
         ))}
       </div>
+
+      {hasMore && (
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <Button type="button" variant="secondary" onClick={loadMore} disabled={isPending} aria-busy={isPending}>
+            {isPending ? "Cargando..." : "Cargar más"}
+          </Button>
+          <p className="text-xs text-foreground/40">
+            {images.length} de {totalCount} fotos
+          </p>
+        </div>
+      )}
 
       {activeImage && (
         <div

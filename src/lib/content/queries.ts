@@ -2,7 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { extractPlaylistId, fetchPlaylistVideos, type PlaylistVideo } from "@/lib/youtube/playlist";
-import type { Gallery, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
+import type { Gallery, GalleryImage, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
 import {
   FEATURED_PRODUCTS,
   GALLERIES,
@@ -72,31 +72,89 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
   }, PROJECTS.find((p) => p.slug === slug) ?? null);
 }
 
+/**
+ * Cantidad de fotos por página en la vista pública de una galería
+ * (/galerias/[tipo]). Con hasta ~900 fotos en una sola galería, cargar todo
+ * de una en un solo request/DOM inflaba la página; se trae de a tandas y el
+ * resto se pide bajo demanda con el botón "Cargar más" (ver
+ * GalleryLightbox + actions/gallery.ts).
+ */
+export const GALLERY_PAGE_SIZE = 60;
+
+export interface GalleryDetail extends Gallery {
+  /** Total de fotos publicadas en la galería (para saber si queda algo por cargar). */
+  imagesTotalCount: number;
+}
+
+/** Listado de galerías (portadas). No trae las fotos de cada una: esta vista
+ * solo usa cover_url/cover_thumb_url, y con galerías de cientos de fotos
+ * traerlas todas acá sería puro desperdicio. */
 export async function getGalleries(): Promise<Gallery[]> {
   return safeQuery(async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("galleries")
-      .select("*, images:gallery_images(*)")
+      .select("*")
       .eq("status", "published")
       .order("published_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []) as Gallery[];
+    return (data ?? []).map((gallery) => ({ ...gallery, images: [] })) as Gallery[];
   }, GALLERIES);
 }
 
-export async function getGalleryByType(type: string): Promise<Gallery | null> {
+/** Galería + primera página de fotos (GALLERY_PAGE_SIZE), para la vista de
+ * detalle pública. El resto se trae con getGalleryImagesPage a demanda. */
+export async function getGalleryByType(type: string): Promise<GalleryDetail | null> {
   return safeQuery(async () => {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const { data: gallery, error } = await supabase
       .from("galleries")
-      .select("*, images:gallery_images(*)")
+      .select("*")
       .eq("gallery_type", type)
       .eq("status", "published")
       .single();
     if (error) throw error;
-    return data as Gallery;
-  }, GALLERIES.find((g) => g.gallery_type === type) ?? null);
+
+    const { data: images, count, error: imagesError } = await supabase
+      .from("gallery_images")
+      .select("*", { count: "exact" })
+      .eq("gallery_id", gallery.id)
+      .order("position", { ascending: true })
+      .range(0, GALLERY_PAGE_SIZE - 1);
+    if (imagesError) throw imagesError;
+
+    return {
+      ...(gallery as Gallery),
+      images: (images ?? []) as GalleryImage[],
+      imagesTotalCount: count ?? images?.length ?? 0,
+    };
+  }, mapSeedGalleryDetail(type));
+}
+
+function mapSeedGalleryDetail(type: string): GalleryDetail | null {
+  const gallery = GALLERIES.find((g) => g.gallery_type === type);
+  if (!gallery) return null;
+  return { ...gallery, imagesTotalCount: gallery.images.length };
+}
+
+/** Siguiente tanda de fotos de una galería, para el botón "Cargar más" de
+ * GalleryLightbox. `offset` es la cantidad de fotos ya mostradas. */
+export async function getGalleryImagesPage(galleryId: string, offset: number): Promise<GalleryImage[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("gallery_images")
+      .select("*")
+      .eq("gallery_id", galleryId)
+      .order("position", { ascending: true })
+      .range(offset, offset + GALLERY_PAGE_SIZE - 1);
+    if (error) throw error;
+    return (data ?? []) as GalleryImage[];
+  } catch (error) {
+    console.warn("[content] No se pudo cargar más imágenes de la galería:", (error as Error).message);
+    return [];
+  }
 }
 
 export async function getFeaturedVideos(): Promise<Video[]> {
