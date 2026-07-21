@@ -17,7 +17,17 @@ function FieldError({ errors }: { errors?: string[] }) {
   return <p className="mt-1 text-xs text-primary">{errors[0]}</p>;
 }
 
-export function CheckoutForm() {
+export interface CheckoutFormInitialValues {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+}
+
+export function CheckoutForm({ initialValues }: { initialValues?: CheckoutFormInitialValues }) {
   const { items, subtotal, currency, clear } = useCart();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -77,14 +87,28 @@ export function CheckoutForm() {
             <label htmlFor="fullName" className={labelClasses}>
               Nombre completo
             </label>
-            <input id="fullName" name="fullName" type="text" required className={inputClasses} />
+            <input
+              id="fullName"
+              name="fullName"
+              type="text"
+              required
+              defaultValue={initialValues?.fullName ?? ""}
+              className={inputClasses}
+            />
             <FieldError errors={fieldErrors?.fullName} />
           </div>
           <div>
             <label htmlFor="email" className={labelClasses}>
               Email
             </label>
-            <input id="email" name="email" type="email" required className={inputClasses} />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              defaultValue={initialValues?.email ?? ""}
+              className={inputClasses}
+            />
             <FieldError errors={fieldErrors?.email} />
           </div>
         </div>
@@ -93,7 +117,14 @@ export function CheckoutForm() {
           <label htmlFor="phone" className={labelClasses}>
             Teléfono
           </label>
-          <input id="phone" name="phone" type="tel" required className={inputClasses} />
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            defaultValue={initialValues?.phone ?? ""}
+            className={inputClasses}
+          />
           <FieldError errors={fieldErrors?.phone} />
         </div>
 
@@ -101,7 +132,15 @@ export function CheckoutForm() {
           <label htmlFor="street" className={labelClasses}>
             Dirección de envío
           </label>
-          <input id="street" name="street" type="text" placeholder="Calle y número" required className={inputClasses} />
+          <input
+            id="street"
+            name="street"
+            type="text"
+            placeholder="Calle y número"
+            required
+            defaultValue={initialValues?.street ?? ""}
+            className={inputClasses}
+          />
           <FieldError errors={fieldErrors?.street} />
         </div>
 
@@ -110,21 +149,42 @@ export function CheckoutForm() {
             <label htmlFor="city" className={labelClasses}>
               Localidad
             </label>
-            <input id="city" name="city" type="text" required className={inputClasses} />
+            <input
+              id="city"
+              name="city"
+              type="text"
+              required
+              defaultValue={initialValues?.city ?? ""}
+              className={inputClasses}
+            />
             <FieldError errors={fieldErrors?.city} />
           </div>
           <div>
             <label htmlFor="province" className={labelClasses}>
               Provincia
             </label>
-            <input id="province" name="province" type="text" required className={inputClasses} />
+            <input
+              id="province"
+              name="province"
+              type="text"
+              required
+              defaultValue={initialValues?.province ?? ""}
+              className={inputClasses}
+            />
             <FieldError errors={fieldErrors?.province} />
           </div>
           <div>
             <label htmlFor="postalCode" className={labelClasses}>
               Código postal
             </label>
-            <input id="postalCode" name="postalCode" type="text" required className={inputClasses} />
+            <input
+              id="postalCode"
+              name="postalCode"
+              type="text"
+              required
+              defaultValue={initialValues?.postalCode ?? ""}
+              className={inputClasses}
+            />
             <FieldError errors={fieldErrors?.postalCode} />
           </div>
         </div>

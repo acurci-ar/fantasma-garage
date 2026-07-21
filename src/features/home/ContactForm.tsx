@@ -23,7 +23,13 @@ function SubmitButton() {
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
-export function ContactForm() {
+export interface ContactFormInitialValues {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export function ContactForm({ initialValues }: { initialValues?: ContactFormInitialValues } = {}) {
   const [state, formAction] = useFormState(submitContactForm, initialState);
 
   return (
@@ -43,14 +49,28 @@ export function ContactForm() {
           <label htmlFor="name" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
             Nombre
           </label>
-          <input id="name" name="name" type="text" required className={inputClasses} />
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            defaultValue={initialValues?.name ?? ""}
+            className={inputClasses}
+          />
           <FieldError errors={state.fieldErrors?.name} />
         </div>
         <div>
           <label htmlFor="email" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
             Email
           </label>
-          <input id="email" name="email" type="email" required className={inputClasses} />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            defaultValue={initialValues?.email ?? ""}
+            className={inputClasses}
+          />
           <FieldError errors={state.fieldErrors?.email} />
         </div>
       </div>
@@ -59,7 +79,13 @@ export function ContactForm() {
         <label htmlFor="phone" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
           Teléfono (opcional)
         </label>
-        <input id="phone" name="phone" type="tel" className={inputClasses} />
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          defaultValue={initialValues?.phone ?? ""}
+          className={inputClasses}
+        />
       </div>
 
       <div>

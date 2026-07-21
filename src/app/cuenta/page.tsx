@@ -136,7 +136,13 @@ export default async function CuentaPage() {
 
             <div className="mt-6 rounded-sm border border-secondary/30 bg-card/40 p-6">
               <p className="mb-4 text-xs uppercase tracking-wide text-foreground/50">Enviar un nuevo mensaje</p>
-              <ContactForm />
+              <ContactForm
+                initialValues={{
+                  name: profile?.full_name ?? "",
+                  email: user.email ?? "",
+                  phone: profile?.phone ?? "",
+                }}
+              />
             </div>
           </div>
         </div>
