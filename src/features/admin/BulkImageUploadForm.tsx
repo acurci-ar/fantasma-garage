@@ -91,6 +91,7 @@ export function BulkImageUploadForm({
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
+      if (!batch) continue;
       const formData = new FormData();
       for (const file of batch) formData.append("files", file);
 
