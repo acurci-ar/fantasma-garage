@@ -42,7 +42,7 @@ export default async function EditProjectPage({ params }: { params: { id: string
           Fotos del proyecto ({images.length})
         </h2>
         <p className="mt-2 text-xs text-foreground/40">
-          Se muestran en la ficha pública del proyecto, ordenadas por "orden". Marcá "antes"/"después" para las
+          Se muestran en la ficha pública del proyecto, ordenadas por &quot;orden&quot;. Marcá &quot;antes&quot;/&quot;después&quot; para las
           fotos de comparación.
         </p>
 

@@ -38,7 +38,7 @@ export default async function EditGalleryPage({ params }: { params: { id: string
           Fotos de la galería ({images.length})
         </h2>
         <p className="mt-2 text-xs text-foreground/40">
-          Se muestran en la página pública de la galería, ordenadas por "orden".
+          Se muestran en la página pública de la galería, ordenadas por &quot;orden&quot;.
         </p>
 
         {images.length > 0 && (

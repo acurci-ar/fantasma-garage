@@ -85,7 +85,7 @@ export function ProjectImageForm({
             defaultChecked={image?.is_before ?? false}
             className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
           />
-          Foto "antes"
+          Foto &quot;antes&quot;
         </label>
         <label className="flex items-center gap-2 text-sm text-foreground/70">
           <input
@@ -94,7 +94,7 @@ export function ProjectImageForm({
             defaultChecked={image?.is_after ?? false}
             className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
           />
-          Foto "después"
+          Foto &quot;después&quot;
         </label>
       </div>
 

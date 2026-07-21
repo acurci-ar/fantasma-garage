@@ -70,7 +70,7 @@ export function GalleryForm({
           <option value="hidden">Oculto</option>
           <option value="discontinued">Discontinuado</option>
         </select>
-        <p className="mt-1 text-xs text-foreground/40">Solo "Publicado" se muestra en /galerias y la home.</p>
+        <p className="mt-1 text-xs text-foreground/40">Solo &quot;Publicado&quot; se muestra en /galerias y la home.</p>
       </div>
 
       <div className="space-y-5 rounded-sm border border-secondary/30 p-5">
