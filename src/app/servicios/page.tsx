@@ -11,11 +11,39 @@ export const metadata: Metadata = {
     "Restauración integral, mecánica y chapa y pintura para autos clásicos y muscle cars.",
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+
 export default async function ServiciosPage() {
   const services = await getServices();
 
+  /**
+   * Cada servicio publicado como entidad Service (schema.org), ligada al
+   * negocio vía @id — la misma referencia que arma el LocalBusiness en
+   * layout.tsx. Da a los motores de IA la lista concreta de qué servicios
+   * ofrecemos, en vez de tener que inferirla del texto suelto de la página.
+   */
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": services.map((service) => ({
+      "@type": "Service",
+      name: service.title,
+      description: service.description,
+      url: `${SITE_URL}/servicios#${service.slug}`,
+      image: service.image_url.startsWith("http") ? service.image_url : `${SITE_URL}${service.image_url}`,
+      provider: { "@id": `${SITE_URL}/#business` },
+      areaServed: { "@type": "Country", name: "Argentina" },
+    })),
+  };
+
   return (
     <Section className="pt-32">
+      {services.length > 0 && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
       <SectionHeading
         eyebrow="Alcance de trabajo"
         title="Servicios"

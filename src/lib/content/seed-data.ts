@@ -26,6 +26,18 @@ export const SITE_SETTINGS: SiteSettings = {
   youtube_playlist_url: "https://www.youtube.com/playlist?list=PL-Li2_2OPYlhQhe5zjqz-qdf2miu3Hdsz",
   years_experience: 30,
   projects_completed: 80,
+  // Vacíos a propósito: no hay dato real todavía. Se completan desde
+  // /admin/configuracion — hasta entonces el JSON-LD del layout omite estos
+  // campos en vez de publicar un placeholder como si fuera un dato real.
+  address_street: "",
+  address_locality: "",
+  address_region: "",
+  address_postal_code: "",
+  address_country: "AR",
+  phone_e164: "",
+  geo_lat: "",
+  geo_lng: "",
+  price_range: "",
 };
 
 export const SERVICES: Service[] = [

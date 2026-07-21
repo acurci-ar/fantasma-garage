@@ -268,6 +268,7 @@ export interface ContactMessage {
 export interface SiteSettings {
   whatsapp_number: string;
   contact_email: string;
+  /** Dirección en texto libre, para mostrar en el sitio (footer, contacto). */
   address: string;
   business_hours: string;
   instagram_url: string;
@@ -275,6 +276,25 @@ export interface SiteSettings {
   youtube_playlist_url: string;
   years_experience: number;
   projects_completed: number;
+  /**
+   * Campos estructurados adicionales para el JSON-LD (schema.org
+   * LocalBusiness/AutoRepair) del layout raíz — separados de `address`
+   * porque ahí necesitamos calle/localidad/provincia/CP por separado, no
+   * un texto libre. Todos opcionales: si están vacíos, el layout omite esa
+   * parte del JSON-LD en vez de publicar datos incompletos o inventados.
+   */
+  address_street: string;
+  address_locality: string;
+  address_region: string;
+  address_postal_code: string;
+  /** Código de país ISO 3166-1 alfa-2, ej. "AR". */
+  address_country: string;
+  /** Teléfono en formato E.164 (ej. "+5491100000000"), para el campo `telephone` del JSON-LD. */
+  phone_e164: string;
+  geo_lat: string;
+  geo_lng: string;
+  /** Rango de precio estilo Google/schema.org, ej. "$$$". */
+  price_range: string;
 }
 
 export interface AuditLog {
