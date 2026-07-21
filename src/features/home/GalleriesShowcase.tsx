@@ -16,7 +16,7 @@ export function GalleriesShowcase({ galleries }: { galleries: Gallery[] }) {
         {galleries.map((gallery) => (
           <Link key={gallery.id} href={`/galerias/${gallery.gallery_type}`} className="block">
             <EditorialCard
-              image={gallery.cover_url}
+              image={gallery.cover_thumb_url ?? gallery.cover_url}
               imageAlt={gallery.title}
               title={gallery.title}
               description={gallery.description ?? undefined}

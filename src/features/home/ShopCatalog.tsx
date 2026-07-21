@@ -51,7 +51,7 @@ export function ShopCatalog({ products }: { products: Product[] }) {
                 <div className="relative aspect-square overflow-hidden">
                   {image && (
                     <Image
-                      src={image.url}
+                      src={image.thumb_url ?? image.url}
                       alt={image.alt}
                       fill
                       sizes="(min-width: 1024px) 33vw, 50vw"

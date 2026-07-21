@@ -69,6 +69,8 @@ export interface ProductImage {
   id: UUID;
   product_id: UUID;
   url: string;
+  /** Miniatura generada del lado del servidor al subir el archivo (ver lib/supabase/upload.ts). Null si la imagen se cargó pegando una URL. */
+  thumb_url: string | null;
   alt: string;
   position: number;
 }
@@ -163,6 +165,8 @@ export interface ProjectImage {
   id: UUID;
   project_id: UUID;
   url: string;
+  /** Miniatura generada del lado del servidor al subir el archivo (ver lib/supabase/upload.ts). Null si la imagen se cargó pegando una URL. */
+  thumb_url: string | null;
   alt: string;
   stage: string | null;
   position: number;
@@ -181,6 +185,8 @@ export interface Project {
   story: string | null;
   status: ProjectStatus;
   cover_url: string;
+  /** Miniatura de portada para grillas/tarjetas. Null si cover_url se cargó pegando una URL. */
+  cover_thumb_url: string | null;
   featured: boolean;
   seo_title: string | null;
   seo_description: string | null;
@@ -193,6 +199,8 @@ export interface GalleryImage {
   id: UUID;
   gallery_id: UUID;
   url: string;
+  /** Miniatura generada del lado del servidor al subir el archivo (ver lib/supabase/upload.ts). Null si la imagen se cargó pegando una URL. */
+  thumb_url: string | null;
   alt: string;
   caption: string | null;
   position: number;
@@ -205,6 +213,8 @@ export interface Gallery {
   gallery_type: GalleryType;
   description: string | null;
   cover_url: string;
+  /** Miniatura de portada para grillas/tarjetas. Null si cover_url se cargó pegando una URL. */
+  cover_thumb_url: string | null;
   status: ContentStatus;
   published_at: ISODateString | null;
   images: GalleryImage[];

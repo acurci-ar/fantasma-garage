@@ -54,11 +54,13 @@ export async function createProject(
   const { cover_url, ...projectData } = parsed.data;
 
   let finalCoverUrl = cover_url;
+  let finalCoverThumbUrl: string | null = null;
   const coverFile = formData.get("cover_file");
   if (coverFile instanceof File && coverFile.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, coverFile, "project-images", projectData.slug);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalCoverUrl = uploaded.url;
+    finalCoverThumbUrl = uploaded.thumbUrl;
   }
 
   if (!finalCoverUrl) {
@@ -67,7 +69,7 @@ export async function createProject(
 
   const { data: project, error } = await supabase
     .from("projects")
-    .insert({ ...projectData, cover_url: finalCoverUrl })
+    .insert({ ...projectData, cover_url: finalCoverUrl, cover_thumb_url: finalCoverThumbUrl })
     .select("id")
     .single();
 
@@ -96,12 +98,25 @@ export async function updateProject(
   const supabase = await createClient();
   const { cover_url, ...projectData } = parsed.data;
 
+  const { data: existingProject } = await supabase
+    .from("projects")
+    .select("cover_url, cover_thumb_url")
+    .eq("id", id)
+    .maybeSingle();
+
   let finalCoverUrl = cover_url;
+  // Si no se subió un archivo nuevo y la URL de portada no cambió,
+  // conservamos la miniatura existente (ver lib/supabase/upload.ts: solo el
+  // archivo subido genera miniatura, una URL pegada a mano no tiene).
+  let finalCoverThumbUrl: string | null =
+    existingProject?.cover_url === cover_url ? existingProject?.cover_thumb_url ?? null : null;
+
   const coverFile = formData.get("cover_file");
   if (coverFile instanceof File && coverFile.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, coverFile, "project-images", projectData.slug);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalCoverUrl = uploaded.url;
+    finalCoverThumbUrl = uploaded.thumbUrl;
   }
 
   if (!finalCoverUrl) {
@@ -110,7 +125,7 @@ export async function updateProject(
 
   const { error } = await supabase
     .from("projects")
-    .update({ ...projectData, cover_url: finalCoverUrl })
+    .update({ ...projectData, cover_url: finalCoverUrl, cover_thumb_url: finalCoverThumbUrl })
     .eq("id", id);
 
   if (error) {
@@ -175,11 +190,13 @@ export async function addProjectImage(
   const { url, ...imageData } = parsed.data;
 
   let finalUrl = url;
+  let finalThumbUrl: string | null = null;
   const file = formData.get("file");
   if (file instanceof File && file.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, file, "project-images", projectId);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalUrl = uploaded.url;
+    finalThumbUrl = uploaded.thumbUrl;
   }
 
   if (!finalUrl) {
@@ -188,7 +205,7 @@ export async function addProjectImage(
 
   const { error } = await supabase
     .from("project_images")
-    .insert({ ...imageData, url: finalUrl, project_id: projectId });
+    .insert({ ...imageData, url: finalUrl, thumb_url: finalThumbUrl, project_id: projectId });
 
   if (error) {
     return { status: "error", message: "No pudimos agregar la imagen." };
@@ -213,15 +230,24 @@ export async function updateProjectImage(
   const supabase = await createClient();
   const { url, ...imageData } = parsed.data;
 
+  const { data: existingImage } = await supabase
+    .from("project_images")
+    .select("url, thumb_url")
+    .eq("id", id)
+    .maybeSingle();
+
   let finalUrl = url;
+  let finalThumbUrl: string | null = existingImage?.url === url ? existingImage?.thumb_url ?? null : null;
+
   const file = formData.get("file");
   if (file instanceof File && file.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, file, "project-images", projectId);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalUrl = uploaded.url;
+    finalThumbUrl = uploaded.thumbUrl;
   }
 
-  const update: Record<string, unknown> = { ...imageData };
+  const update: Record<string, unknown> = { ...imageData, thumb_url: finalThumbUrl };
   if (finalUrl) update.url = finalUrl;
 
   const { error } = await supabase.from("project_images").update(update).eq("id", id);

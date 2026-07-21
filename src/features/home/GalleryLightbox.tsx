@@ -46,7 +46,7 @@ export function GalleryLightbox({ images }: { images: GalleryImage[] }) {
             className="block w-full overflow-hidden rounded-sm bg-card focus-visible:ring-2 focus-visible:ring-primary"
           >
             <Image
-              src={image.url}
+              src={image.thumb_url ?? image.url}
               alt={image.alt}
               width={800}
               height={600}

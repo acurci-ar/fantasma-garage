@@ -41,12 +41,25 @@ export async function updateGallery(
   const supabase = await createClient();
   const { cover_url, ...galleryData } = parsed.data;
 
+  const { data: existingGallery } = await supabase
+    .from("galleries")
+    .select("cover_url, cover_thumb_url")
+    .eq("id", id)
+    .maybeSingle();
+
   let finalCoverUrl = cover_url;
+  // Si no se subió un archivo nuevo y la URL de portada no cambió,
+  // conservamos la miniatura existente (ver lib/supabase/upload.ts: solo el
+  // archivo subido genera miniatura, una URL pegada a mano no tiene).
+  let finalCoverThumbUrl: string | null =
+    existingGallery?.cover_url === cover_url ? existingGallery?.cover_thumb_url ?? null : null;
+
   const coverFile = formData.get("cover_file");
   if (coverFile instanceof File && coverFile.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, coverFile, "gallery-images", slug);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalCoverUrl = uploaded.url;
+    finalCoverThumbUrl = uploaded.thumbUrl;
   }
 
   if (!finalCoverUrl) {
@@ -55,7 +68,7 @@ export async function updateGallery(
 
   const { error } = await supabase
     .from("galleries")
-    .update({ ...galleryData, cover_url: finalCoverUrl })
+    .update({ ...galleryData, cover_url: finalCoverUrl, cover_thumb_url: finalCoverThumbUrl })
     .eq("id", id);
 
   if (error) {
@@ -104,11 +117,13 @@ export async function addGalleryImage(
   const { url, ...imageData } = parsed.data;
 
   let finalUrl = url;
+  let finalThumbUrl: string | null = null;
   const file = formData.get("file");
   if (file instanceof File && file.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, file, "gallery-images", gallerySlug);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalUrl = uploaded.url;
+    finalThumbUrl = uploaded.thumbUrl;
   }
 
   if (!finalUrl) {
@@ -117,7 +132,7 @@ export async function addGalleryImage(
 
   const { error } = await supabase
     .from("gallery_images")
-    .insert({ ...imageData, url: finalUrl, gallery_id: galleryId });
+    .insert({ ...imageData, url: finalUrl, thumb_url: finalThumbUrl, gallery_id: galleryId });
 
   if (error) {
     return { status: "error", message: "No pudimos agregar la imagen." };
@@ -143,15 +158,24 @@ export async function updateGalleryImage(
   const supabase = await createClient();
   const { url, ...imageData } = parsed.data;
 
+  const { data: existingImage } = await supabase
+    .from("gallery_images")
+    .select("url, thumb_url")
+    .eq("id", id)
+    .maybeSingle();
+
   let finalUrl = url;
+  let finalThumbUrl: string | null = existingImage?.url === url ? existingImage?.thumb_url ?? null : null;
+
   const file = formData.get("file");
   if (file instanceof File && file.size > 0) {
     const uploaded = await uploadImageToBucket(supabase, file, "gallery-images", gallerySlug);
     if ("error" in uploaded) return { status: "error", message: uploaded.error };
     finalUrl = uploaded.url;
+    finalThumbUrl = uploaded.thumbUrl;
   }
 
-  const update: Record<string, unknown> = { ...imageData };
+  const update: Record<string, unknown> = { ...imageData, thumb_url: finalThumbUrl };
   if (finalUrl) update.url = finalUrl;
 
   const { error } = await supabase.from("gallery_images").update(update).eq("id", id);

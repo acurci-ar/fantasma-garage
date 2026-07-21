@@ -86,7 +86,13 @@ export default async function ProjectPage({ params }: { params: { slug: string }
           <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {project.images.map((image) => (
               <div key={image.id} className="relative aspect-[4/3] overflow-hidden rounded-sm bg-card">
-                <Image src={image.url} alt={image.alt} fill sizes="(min-width: 1024px) 33vw, 50vw" className="object-cover" />
+                <Image
+                  src={image.thumb_url ?? image.url}
+                  alt={image.alt}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, 50vw"
+                  className="object-cover"
+                />
               </div>
             ))}
           </div>

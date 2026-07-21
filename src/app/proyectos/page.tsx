@@ -31,7 +31,7 @@ export default async function ProyectosPage() {
         {projects.map((project) => (
           <Link key={project.id} href={`/proyectos/${project.slug}`} className="block">
             <EditorialCard
-              image={project.cover_url}
+              image={project.cover_thumb_url ?? project.cover_url}
               imageAlt={`${project.make} ${project.model} ${project.year}`}
               eyebrow={`${project.make} · ${project.year}`}
               title={project.model}
