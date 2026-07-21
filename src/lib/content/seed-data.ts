@@ -152,7 +152,7 @@ export const GALLERIES: Gallery[] = [
     title: "Trabajos",
     gallery_type: "trabajos",
     description: "Procesos, detalles y resultados de Fantasma Garage.",
-    cover_url: "/images/galeria/chapa.webp",
+    cover_url: "/images/galeria/trabajos-galeria.webp",
     status: "published",
     published_at: null,
     images: [],
