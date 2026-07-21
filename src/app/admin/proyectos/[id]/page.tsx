@@ -56,11 +56,7 @@ export default async function EditProjectPage({ params }: { params: { id: string
         )}
 
         <div className="mt-6">
-          <BulkImageUploadForm
-            key={images.length}
-            action={addProjectImages.bind(null, id)}
-            initialState={{ status: "idle", message: "" }}
-          />
+          <BulkImageUploadForm key={images.length} action={addProjectImages.bind(null, id)} />
         </div>
 
         <div className="mt-6">

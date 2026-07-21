@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { projectSchema, projectImageSchema } from "@/lib/validation/admin/project";
 import { createClient } from "@/lib/supabase/server";
 import { uploadImageToBucket } from "@/lib/supabase/upload";
+import type { BulkUploadActionState } from "@/lib/validation/admin/bulkUpload";
 
 export interface ProjectActionState {
   status: "idle" | "success" | "error";
@@ -186,9 +187,9 @@ function parseProjectImageForm(formData: FormData) {
  */
 export async function addProjectImages(
   projectId: string,
-  _prevState: ProjectImageActionState,
+  _prevState: BulkUploadActionState,
   formData: FormData
-): Promise<ProjectImageActionState> {
+): Promise<BulkUploadActionState> {
   const files = formData.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   if (files.length === 0) {
     return { status: "error", message: "Seleccioná al menos una imagen." };

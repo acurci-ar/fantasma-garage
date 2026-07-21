@@ -51,11 +51,7 @@ export default async function EditGalleryPage({ params }: { params: { id: string
         )}
 
         <div className="mt-6">
-          <BulkImageUploadForm
-            key={images.length}
-            action={addGalleryImages.bind(null, id, typedGallery.slug)}
-            initialState={{ status: "idle", message: "" }}
-          />
+          <BulkImageUploadForm key={images.length} action={addGalleryImages.bind(null, id, typedGallery.slug)} />
         </div>
 
         <div className="mt-6">

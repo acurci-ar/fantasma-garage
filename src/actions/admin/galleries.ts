@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { gallerySchema, galleryImageSchema } from "@/lib/validation/admin/gallery";
 import { createClient } from "@/lib/supabase/server";
 import { uploadImageToBucket } from "@/lib/supabase/upload";
+import type { BulkUploadActionState } from "@/lib/validation/admin/bulkUpload";
 
 export interface GalleryActionState {
   status: "idle" | "success" | "error";
@@ -112,9 +113,9 @@ function parseGalleryImageForm(formData: FormData) {
 export async function addGalleryImages(
   galleryId: string,
   gallerySlug: string,
-  _prevState: GalleryImageActionState,
+  _prevState: BulkUploadActionState,
   formData: FormData
-): Promise<GalleryImageActionState> {
+): Promise<BulkUploadActionState> {
   const files = formData.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   if (files.length === 0) {
     return { status: "error", message: "Seleccioná al menos una imagen." };

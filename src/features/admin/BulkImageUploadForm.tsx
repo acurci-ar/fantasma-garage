@@ -4,11 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
-
-interface BulkUploadActionState {
-  status: "idle" | "success" | "error";
-  message: string;
-}
+import type { BulkUploadActionState } from "@/lib/validation/admin/bulkUpload";
 
 function SubmitButton({ count }: { count: number }) {
   const { pending } = useFormStatus();
@@ -26,18 +22,18 @@ function SubmitButton({ count }: { count: number }) {
  * subidas (mismo patrón "agregar sin metadata, editar después" en las dos
  * secciones que usan este componente).
  *
- * Genérico en el estado (S) para aceptar tanto GalleryImageActionState como
- * ProjectImageActionState (ambos tienen status/message + su propio
- * fieldErrors opcional) sin forzar un tipo de estado propio distinto al de
- * las Server Actions que ya existían.
+ * Las Server Actions que recibe (addGalleryImages/addProjectImages) están
+ * tipadas con este mismo BulkUploadActionState (no con
+ * GalleryImageActionState/ProjectImageActionState, que traen un
+ * `fieldErrors` que useFormState no logra unificar genéricamente — ver
+ * commit que arregló el build por este motivo).
  */
-export function BulkImageUploadForm<S extends BulkUploadActionState>({
+export function BulkImageUploadForm({
   action,
-  initialState,
 }: {
-  action: (state: S, formData: FormData) => Promise<S>;
-  initialState: S;
+  action: (state: BulkUploadActionState, formData: FormData) => Promise<BulkUploadActionState>;
 }) {
+  const initialState: BulkUploadActionState = { status: "idle", message: "" };
   const [state, formAction] = useFormState(action, initialState);
   const [fileCount, setFileCount] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
