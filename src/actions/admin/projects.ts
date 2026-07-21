@@ -192,7 +192,7 @@ export async function addProjectImages(
 ): Promise<BulkUploadActionState> {
   const files = formData.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
   if (files.length === 0) {
-    return { status: "error", message: "Seleccioná al menos una imagen." };
+    return { status: "error", message: "Seleccioná al menos una imagen.", uploaded: 0, failed: 0 };
   }
 
   const supabase = await createClient();
@@ -224,12 +224,22 @@ export async function addProjectImages(
   }
 
   if (rows.length === 0) {
-    return { status: "error", message: "No pudimos subir ninguna de las imágenes seleccionadas." };
+    return {
+      status: "error",
+      message: "No pudimos subir ninguna de las imágenes de este lote.",
+      uploaded: 0,
+      failed: files.length,
+    };
   }
 
   const { error } = await supabase.from("project_images").insert(rows);
   if (error) {
-    return { status: "error", message: "Subimos las imágenes pero no pudimos guardarlas. Probá de nuevo." };
+    return {
+      status: "error",
+      message: "Subimos las imágenes pero no pudimos guardarlas. Probá de nuevo.",
+      uploaded: 0,
+      failed: files.length,
+    };
   }
 
   revalidatePath(`/admin/proyectos/${projectId}`);
@@ -240,8 +250,10 @@ export async function addProjectImages(
     status: "success",
     message:
       skipped > 0
-        ? `Se subieron ${rows.length} de ${files.length} imágenes (${skipped} fallaron).`
-        : `Se subieron ${rows.length} imagen${rows.length === 1 ? "" : "es"}.`,
+        ? `Se subieron ${rows.length} de ${files.length} imágenes de este lote (${skipped} fallaron).`
+        : `Se subieron ${rows.length} imagen${rows.length === 1 ? "" : "es"} de este lote.`,
+    uploaded: rows.length,
+    failed: skipped,
   };
 }
 

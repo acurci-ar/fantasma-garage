@@ -8,4 +8,7 @@
 export interface BulkUploadActionState {
   status: "idle" | "success" | "error";
   message: string;
+  /** Cuántas imágenes de este lote se subieron/fallaron — el cliente los va sumando a través de varios lotes. */
+  uploaded?: number;
+  failed?: number;
 }

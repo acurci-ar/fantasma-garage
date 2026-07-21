@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { formatBytes, isImageTooHeavy, exceedsHardLimit, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
+import { resizeImageForUpload } from "@/lib/utils/clientImageResize";
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -39,8 +40,9 @@ export function ImageUploadField({
     };
   }, [filePreview]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const inputEl = e.target;
+    const file = inputEl.files?.[0];
     setFileWarning(null);
     setFileError(null);
 
@@ -53,28 +55,43 @@ export function ImageUploadField({
 
     if (!file.type.startsWith("image/")) {
       setFileError("El archivo tiene que ser una imagen.");
-      e.target.value = "";
+      inputEl.value = "";
       return;
     }
 
-    if (exceedsHardLimit(file.size)) {
+    // Achicamos en el navegador antes de validar el límite: una foto de
+    // celular de 8-10MB que si no se rechazaría acá, en general entra sin
+    // problema una vez reducida (ver lib/utils/clientImageResize.ts — esto
+    // también evita el 413 de Vercel al enviar el formulario con un archivo
+    // grande).
+    const processedFile = await resizeImageForUpload(file);
+
+    if (exceedsHardLimit(processedFile.size)) {
       setFileError(
-        `Pesa ${formatBytes(file.size)}. El máximo permitido es ${formatBytes(MAX_PRODUCT_IMAGE_BYTES)}: elegí una imagen más liviana.`
+        `Pesa ${formatBytes(processedFile.size)}. El máximo permitido es ${formatBytes(MAX_PRODUCT_IMAGE_BYTES)}: elegí una imagen más liviana.`
       );
-      e.target.value = "";
+      inputEl.value = "";
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
+    if (processedFile !== file) {
+      // Reemplazamos el archivo del input nativo por la versión achicada,
+      // para que sea esa la que efectivamente viaje al enviar el formulario.
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(processedFile);
+      inputEl.files = dataTransfer.files;
+    }
+
+    const objectUrl = URL.createObjectURL(processedFile);
     setFilePreview(objectUrl);
     // Si se elige un archivo, tiene prioridad sobre la URL pegada a mano.
     if (urlInputRef.current) urlInputRef.current.value = "";
 
     const probe = document.createElement("img");
     probe.onload = () => {
-      if (isImageTooHeavy(file.size, probe.naturalWidth, probe.naturalHeight)) {
+      if (isImageTooHeavy(processedFile.size, probe.naturalWidth, probe.naturalHeight)) {
         setFileWarning(
-          `Pesa ${formatBytes(file.size)} (${probe.naturalWidth}×${probe.naturalHeight}px). Para que la web cargue rápido conviene achicarla a menos de ${formatBytes(400 * 1024)} y no más de 2000px de lado. Se puede subir igual.`
+          `Pesa ${formatBytes(processedFile.size)} (${probe.naturalWidth}×${probe.naturalHeight}px). Para que la web cargue rápido conviene achicarla a menos de ${formatBytes(400 * 1024)} y no más de 2000px de lado. Se puede subir igual.`
         );
       }
     };
