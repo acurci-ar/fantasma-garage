@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { GalleryForm } from "@/features/admin/GalleryForm";
 import { GalleryImageForm } from "@/features/admin/GalleryImageForm";
 import { GalleryImageRow } from "@/features/admin/GalleryImageRow";
-import { updateGallery, addGalleryImage } from "@/actions/admin/galleries";
+import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
+import { updateGallery, addGalleryImage, addGalleryImages } from "@/actions/admin/galleries";
 import type { Gallery, GalleryImage } from "@/types/database";
 
 export const metadata: Metadata = { title: "Editar galería", robots: { index: false, follow: false } };
@@ -50,7 +51,17 @@ export default async function EditGalleryPage({ params }: { params: { id: string
         )}
 
         <div className="mt-6">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">Agregar foto</p>
+          <BulkImageUploadForm
+            key={images.length}
+            action={addGalleryImages.bind(null, id, typedGallery.slug)}
+            initialState={{ status: "idle", message: "" }}
+          />
+        </div>
+
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
+            O agregar una foto con sus datos
+          </p>
           <GalleryImageForm
             key={images.length}
             action={addGalleryImage.bind(null, id, typedGallery.slug)}

@@ -4,7 +4,8 @@ import { ProjectForm } from "@/features/admin/ProjectForm";
 import { DeleteProjectButton } from "@/features/admin/DeleteProjectButton";
 import { ProjectImageForm } from "@/features/admin/ProjectImageForm";
 import { ProjectImageRow } from "@/features/admin/ProjectImageRow";
-import { updateProject, addProjectImage } from "@/actions/admin/projects";
+import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
+import { updateProject, addProjectImage, addProjectImages } from "@/actions/admin/projects";
 import type { Project, ProjectImage } from "@/types/database";
 
 export const metadata: Metadata = { title: "Editar proyecto", robots: { index: false, follow: false } };
@@ -55,7 +56,17 @@ export default async function EditProjectPage({ params }: { params: { id: string
         )}
 
         <div className="mt-6">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">Agregar foto</p>
+          <BulkImageUploadForm
+            key={images.length}
+            action={addProjectImages.bind(null, id)}
+            initialState={{ status: "idle", message: "" }}
+          />
+        </div>
+
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
+            O agregar una foto con sus datos
+          </p>
           <ProjectImageForm key={images.length} action={addProjectImage.bind(null, id)} submitLabel="Agregar" />
         </div>
       </div>

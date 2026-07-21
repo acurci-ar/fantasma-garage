@@ -176,6 +176,74 @@ function parseProjectImageForm(formData: FormData) {
   });
 }
 
+/**
+ * Alta de varias fotos a la vez (input file con `multiple`). Se guardan sin
+ * texto alternativo, etapa ni marca de antes/después — el ABMC de cada
+ * project_image (arriba, ver página /admin/proyectos/[id]) permite completar
+ * esos datos foto por foto después de la carga masiva. Si alguna imagen
+ * individual falla al subir, seguimos con las demás en vez de abortar todo
+ * el lote.
+ */
+export async function addProjectImages(
+  projectId: string,
+  _prevState: ProjectImageActionState,
+  formData: FormData
+): Promise<ProjectImageActionState> {
+  const files = formData.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) {
+    return { status: "error", message: "Seleccioná al menos una imagen." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: lastImage } = await supabase
+    .from("project_images")
+    .select("position")
+    .eq("project_id", projectId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nextPosition = (lastImage?.position ?? 0) + 1;
+  const rows: Record<string, unknown>[] = [];
+
+  for (const file of files) {
+    const uploaded = await uploadImageToBucket(supabase, file, "project-images", projectId);
+    if ("error" in uploaded) continue;
+    rows.push({
+      project_id: projectId,
+      url: uploaded.url,
+      thumb_url: uploaded.thumbUrl,
+      alt: "",
+      stage: null,
+      is_before: false,
+      is_after: false,
+      position: nextPosition++,
+    });
+  }
+
+  if (rows.length === 0) {
+    return { status: "error", message: "No pudimos subir ninguna de las imágenes seleccionadas." };
+  }
+
+  const { error } = await supabase.from("project_images").insert(rows);
+  if (error) {
+    return { status: "error", message: "Subimos las imágenes pero no pudimos guardarlas. Probá de nuevo." };
+  }
+
+  revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath("/proyectos");
+
+  const skipped = files.length - rows.length;
+  return {
+    status: "success",
+    message:
+      skipped > 0
+        ? `Se subieron ${rows.length} de ${files.length} imágenes (${skipped} fallaron).`
+        : `Se subieron ${rows.length} imagen${rows.length === 1 ? "" : "es"}.`,
+  };
+}
+
 export async function addProjectImage(
   projectId: string,
   _prevState: ProjectImageActionState,

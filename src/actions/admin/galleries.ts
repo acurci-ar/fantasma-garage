@@ -102,6 +102,72 @@ function parseGalleryImageForm(formData: FormData) {
   });
 }
 
+/**
+ * Alta de varias fotos a la vez (input file con `multiple`). Se guardan sin
+ * epígrafe ni texto alternativo — el ABMC de cada gallery_image (arriba, ver
+ * página /admin/galerias/[id]) permite completar esos datos foto por foto
+ * después de la carga masiva. Si alguna imagen individual falla al subir,
+ * seguimos con las demás en vez de abortar todo el lote.
+ */
+export async function addGalleryImages(
+  galleryId: string,
+  gallerySlug: string,
+  _prevState: GalleryImageActionState,
+  formData: FormData
+): Promise<GalleryImageActionState> {
+  const files = formData.getAll("files").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) {
+    return { status: "error", message: "Seleccioná al menos una imagen." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: lastImage } = await supabase
+    .from("gallery_images")
+    .select("position")
+    .eq("gallery_id", galleryId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nextPosition = (lastImage?.position ?? 0) + 1;
+  const rows: Record<string, unknown>[] = [];
+
+  for (const file of files) {
+    const uploaded = await uploadImageToBucket(supabase, file, "gallery-images", gallerySlug);
+    if ("error" in uploaded) continue;
+    rows.push({
+      gallery_id: galleryId,
+      url: uploaded.url,
+      thumb_url: uploaded.thumbUrl,
+      alt: "",
+      caption: null,
+      position: nextPosition++,
+    });
+  }
+
+  if (rows.length === 0) {
+    return { status: "error", message: "No pudimos subir ninguna de las imágenes seleccionadas." };
+  }
+
+  const { error } = await supabase.from("gallery_images").insert(rows);
+  if (error) {
+    return { status: "error", message: "Subimos las imágenes pero no pudimos guardarlas. Probá de nuevo." };
+  }
+
+  revalidatePath(`/admin/galerias/${galleryId}`);
+  revalidatePath(`/galerias/${gallerySlug}`);
+
+  const skipped = files.length - rows.length;
+  return {
+    status: "success",
+    message:
+      skipped > 0
+        ? `Se subieron ${rows.length} de ${files.length} imágenes (${skipped} fallaron).`
+        : `Se subieron ${rows.length} imagen${rows.length === 1 ? "" : "es"}.`,
+  };
+}
+
 export async function addGalleryImage(
   galleryId: string,
   gallerySlug: string,
