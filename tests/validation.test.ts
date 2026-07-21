@@ -7,6 +7,8 @@ import { newsletterSchema } from "../src/lib/validation/newsletter.ts";
 import { newsletterInterestSchema } from "../src/lib/validation/admin/newsletterInterest.ts";
 import { newsletterSubscriberSchema } from "../src/lib/validation/admin/newsletterSubscriber.ts";
 import { videoSchema } from "../src/lib/validation/admin/video.ts";
+import { projectSchema } from "../src/lib/validation/admin/project.ts";
+import { gallerySchema } from "../src/lib/validation/admin/gallery.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -196,6 +198,63 @@ test("videoSchema rechaza una URL que no es de YouTube", () => {
     youtube_url: "https://vimeo.com/12345",
     featured: false,
     position: "0",
+  });
+  assert.equal(result.success, false);
+});
+
+test("projectSchema acepta un proyecto válido y castea el año", () => {
+  const result = projectSchema.safeParse({
+    title: "Chevy Nova 1972",
+    slug: "chevy-nova-1972",
+    make: "Chevrolet",
+    model: "Nova",
+    year: "1972",
+    summary: "Restauración completa de chapa, pintura y mecánica.",
+    story: "",
+    status: "en_curso",
+    featured: true,
+    seo_title: "",
+    seo_description: "",
+    cover_url: "/images/proyectos/nova.webp",
+  });
+  assert.equal(result.success, true);
+  if (result.success) assert.equal(result.data.year, 1972);
+});
+
+test("projectSchema rechaza un slug con mayúsculas o espacios", () => {
+  const result = projectSchema.safeParse({
+    title: "Chevy Nova 1972",
+    slug: "Chevy Nova 1972",
+    make: "Chevrolet",
+    model: "Nova",
+    year: "1972",
+    summary: "Restauración completa.",
+    story: "",
+    status: "en_curso",
+    featured: false,
+    seo_title: "",
+    seo_description: "",
+    cover_url: "",
+  });
+  assert.equal(result.success, false);
+});
+
+test("gallerySchema acepta una galería válida", () => {
+  const result = gallerySchema.safeParse({
+    title: "SEMA",
+    description: "Nuestro stand en SEMA.",
+    status: "published",
+    cover_url: "/images/galeria/sema.webp",
+  });
+  assert.equal(result.success, true);
+});
+
+test("gallerySchema rechaza un estado inválido", () => {
+  const result = gallerySchema.safeParse({
+    title: "SEMA",
+    description: "",
+    status: "activo",
+    cover_url: "/images/galeria/sema.webp",
   });
   assert.equal(result.success, false);
 });
