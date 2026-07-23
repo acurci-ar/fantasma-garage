@@ -56,7 +56,15 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
               // (funciona igual en prod, en previews de Vercel y en local),
               // pero igual hay que agregar ese dominio a la lista de
               // "Redirect URLs" del dashboard o Supabase lo va a rechazar.
-              options: { emailRedirectTo: `${window.location.origin}${redirectTo}` },
+              //
+              // Apunta a /auth/callback (no directo a redirectTo): con el
+              // flujo PKCE que usa @supabase/ssr, el link de confirmación
+              // llega con ?code=... que hay que intercambiar por una sesión
+              // server-side — si no, el usuario queda confirmado pero
+              // deslogueado. next=redirectTo es a dónde va una vez logueado.
+              options: {
+                emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+              },
             });
 
       if (error) throw error;
