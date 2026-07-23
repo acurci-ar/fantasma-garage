@@ -55,19 +55,30 @@ export default async function CuentaPage() {
     redirect("/admin");
   }
 
-  const [{ data: orders }, { data: messages }, { data: sharedProjects }] = await Promise.all([
+  const [{ data: orders }, { data: messages }] = await Promise.all([
     supabase.from("orders").select("*").order("created_at", { ascending: false }),
     supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
-    // Proyectos privados a los que este usuario tiene acceso otorgado (ver
-    // project_access / has_project_access en 0011_project_expansion.sql).
-    // No hace falta filtrar por email acá: la RLS de `projects` ya solo
-    // devuelve los privados donde el usuario logueado tiene acceso (o es
-    // staff, pero a un staff ya lo redirigimos a /admin más arriba).
-    supabase.from("projects").select("*").eq("visibility", "private").order("created_at", { ascending: false }),
   ]);
 
   const typedOrders = (orders ?? []) as Order[];
   const typedMessages = (messages ?? []) as ContactMessage[];
+
+  // Proyectos a los que este usuario tiene acceso otorgado (ver
+  // project_access / has_project_access en 0011_project_expansion.sql).
+  // Se consulta project_access primero (en vez de filtrar projects por
+  // visibility = 'private') y después se traen los proyectos por id: así
+  // se muestra igual el proyecto aunque el admin lo haya dejado en
+  // "público" — el acceso otorgado es lo que importa acá, no el estado
+  // actual de visibilidad. La RLS de project_access (project_access_select_own)
+  // ya limita esto a los accesos del propio usuario.
+  const { data: accessRows } = await supabase.from("project_access").select("project_id");
+  const sharedProjectIds = [...new Set((accessRows ?? []).map((row) => row.project_id as string))];
+
+  const { data: sharedProjects } =
+    sharedProjectIds.length > 0
+      ? await supabase.from("projects").select("*").in("id", sharedProjectIds).order("created_at", { ascending: false })
+      : { data: [] as Project[] };
+
   const typedSharedProjects = (sharedProjects ?? []) as Project[];
 
   // RLS (contact_message_replies_select_own) ya limita esto a respuestas de
@@ -112,12 +123,12 @@ export default async function CuentaPage() {
         </div>
 
         <div className="space-y-12">
-          {typedSharedProjects.length > 0 && (
-            <div>
-              <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis proyectos</h2>
-              <p className="mt-1 text-xs text-foreground/40">
-                Proyectos privados a los que te dieron acceso.
-              </p>
+          <div>
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis proyectos</h2>
+            <p className="mt-1 text-xs text-foreground/40">Proyectos a los que te dieron acceso.</p>
+            {typedSharedProjects.length === 0 ? (
+              <p className="mt-4 text-sm text-foreground/50">Todavía no tenés proyectos asociados a tu cuenta.</p>
+            ) : (
               <ul className="mt-4 space-y-3">
                 {typedSharedProjects.map((project) => (
                   <li key={project.id}>
@@ -131,13 +142,15 @@ export default async function CuentaPage() {
                         </p>
                         <p className="mt-1 text-xs text-foreground/40">{project.summary}</p>
                       </div>
-                      <Badge tone="default">Privado</Badge>
+                      <Badge tone={project.visibility === "private" ? "default" : "primary"}>
+                        {project.visibility === "private" ? "Privado" : "Público"}
+                      </Badge>
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
 
           <div>
             <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis pedidos</h2>
