@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { MessageStatusButtons } from "@/features/admin/MessageStatusButtons";
 import { formatDate } from "@/lib/utils/format";
@@ -60,8 +61,14 @@ export default async function AdminMessagesPage() {
                 </div>
               </div>
               <p className="mt-4 text-sm text-foreground/70">{message.message}</p>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap items-center gap-4">
                 <MessageStatusButtons id={message.id} current={message.status} />
+                <Link
+                  href={`/admin/mensajes/${message.id}`}
+                  className="text-xs font-semibold uppercase tracking-wide text-primary hover:underline"
+                >
+                  Responder →
+                </Link>
               </div>
             </li>
           ))}

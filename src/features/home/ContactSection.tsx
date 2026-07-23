@@ -1,10 +1,16 @@
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Panel } from "@/components/ui/Card";
-import { ContactForm } from "@/features/home/ContactForm";
+import { ContactForm, type ContactFormInitialValues } from "@/features/home/ContactForm";
 import type { SiteSettings } from "@/types/database";
 
-export function ContactSection({ settings }: { settings: SiteSettings }) {
+export function ContactSection({
+  settings,
+  initialValues,
+}: {
+  settings: SiteSettings;
+  initialValues?: ContactFormInitialValues;
+}) {
   const whatsappHref = `https://wa.me/${settings.whatsapp_number.replace(/[^0-9]/g, "")}`;
 
   return (
@@ -17,7 +23,7 @@ export function ContactSection({ settings }: { settings: SiteSettings }) {
 
       <div className="mt-12 grid gap-10 lg:grid-cols-[1.2fr_1fr]">
         <Panel>
-          <ContactForm />
+          <ContactForm initialValues={initialValues} />
         </Panel>
 
         <div className="space-y-4">

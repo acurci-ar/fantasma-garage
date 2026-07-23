@@ -45,7 +45,19 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
       const { error } =
         mode === "login"
           ? await supabase.auth.signInWithPassword({ email, password })
-          : await supabase.auth.signUp({ email, password });
+          : await supabase.auth.signUp({
+              email,
+              password,
+              // Sin esto, Supabase usa el "Site URL" configurado en su
+              // dashboard (Authentication > URL Configuration) para el link
+              // de confirmación del email — que por defecto suele quedar en
+              // http://localhost:3000. Con window.location.origin apuntamos
+              // siempre al dominio real desde el que se registró el usuario
+              // (funciona igual en prod, en previews de Vercel y en local),
+              // pero igual hay que agregar ese dominio a la lista de
+              // "Redirect URLs" del dashboard o Supabase lo va a rechazar.
+              options: { emailRedirectTo: `${window.location.origin}${redirectTo}` },
+            });
 
       if (error) throw error;
 

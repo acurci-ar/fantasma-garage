@@ -9,7 +9,7 @@ import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
 import { ContactForm } from "@/features/home/ContactForm";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { ContactMessage, Order, Profile } from "@/types/database";
+import type { ContactMessage, ContactMessageReply, Order, Profile } from "@/types/database";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false, follow: false } };
 
@@ -61,6 +61,25 @@ export default async function CuentaPage() {
 
   const typedOrders = (orders ?? []) as Order[];
   const typedMessages = (messages ?? []) as ContactMessage[];
+
+  // RLS (contact_message_replies_select_own) ya limita esto a respuestas de
+  // mensajes propios, pero igual filtramos por los ids que ya tenemos.
+  const messageIds = typedMessages.map((message) => message.id);
+  const { data: replies } =
+    messageIds.length > 0
+      ? await supabase
+          .from("contact_message_replies")
+          .select("*")
+          .in("message_id", messageIds)
+          .order("created_at", { ascending: true })
+      : { data: [] as ContactMessageReply[] };
+
+  const repliesByMessage = new Map<string, ContactMessageReply[]>();
+  for (const reply of (replies ?? []) as ContactMessageReply[]) {
+    const list = repliesByMessage.get(reply.message_id) ?? [];
+    list.push(reply);
+    repliesByMessage.set(reply.message_id, list);
+  }
 
   return (
     <Section className="pt-32">
@@ -129,6 +148,22 @@ export default async function CuentaPage() {
                       </div>
                     </div>
                     <p className="mt-2 text-sm text-foreground/70">{message.message}</p>
+
+                    {(repliesByMessage.get(message.id) ?? []).length > 0 && (
+                      <div className="mt-4 space-y-3 border-t border-secondary/20 pt-4">
+                        {(repliesByMessage.get(message.id) ?? []).map((reply) => (
+                          <div key={reply.id} className="rounded-sm border border-primary/30 bg-primary/5 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                                Fantasma Garage respondió
+                              </p>
+                              <span className="text-xs text-foreground/40">{formatDate(reply.created_at)}</span>
+                            </div>
+                            <p className="mt-2 whitespace-pre-line text-sm text-foreground/70">{reply.body}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

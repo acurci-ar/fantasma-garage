@@ -15,16 +15,21 @@ import {
   getServices,
   getSiteSettings,
 } from "@/lib/content/queries";
+import { getLoggedInProfile } from "@/lib/account/getLoggedInProfile";
 
 export default async function HomePage() {
-  const [settings, services, projects, galleries, videos, products] = await Promise.all([
+  const [settings, services, projects, galleries, videos, products, loggedIn] = await Promise.all([
     getSiteSettings(),
     getServices(),
     getFeaturedProjects(),
     getGalleries(),
     getFeaturedVideos(),
     getFeaturedProducts(),
+    getLoggedInProfile(),
   ]);
+  const contactInitialValues = loggedIn
+    ? { name: loggedIn.profile?.full_name ?? "", email: loggedIn.email, phone: loggedIn.profile?.phone ?? "" }
+    : undefined;
 
   return (
     <>
@@ -36,7 +41,7 @@ export default async function HomePage() {
       <WorkshopVideos videos={videos} settings={settings} />
       <FeaturedShop products={products} />
       <NewsletterCta />
-      <ContactSection settings={settings} />
+      <ContactSection settings={settings} initialValues={contactInitialValues} />
     </>
   );
 }

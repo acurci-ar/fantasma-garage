@@ -265,6 +265,16 @@ export interface ContactMessage {
   created_at: ISODateString;
 }
 
+export interface ContactMessageReply {
+  id: UUID;
+  message_id: UUID;
+  author_id: UUID | null;
+  body: string;
+  /** false si la respuesta se guardó pero el email no se pudo enviar (o no hay proveedor configurado). */
+  email_sent: boolean;
+  created_at: ISODateString;
+}
+
 export interface SiteSettings {
   whatsapp_number: string;
   contact_email: string;
