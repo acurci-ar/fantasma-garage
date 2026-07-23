@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { profileSchema } from "@/lib/validation/account";
+import { profileSchema, changePasswordSchema } from "@/lib/validation/account";
 import { createClient } from "@/lib/supabase/server";
 
 export interface ProfileActionState {
@@ -66,4 +66,70 @@ export async function updateProfile(
 
   revalidatePath("/cuenta");
   return { status: "success", message: "Datos actualizados." };
+}
+
+export interface ChangePasswordActionState {
+  status: "idle" | "success" | "error";
+  message: string;
+  fieldErrors?: Record<string, string[]>;
+}
+
+/**
+ * Cambia la contraseña del usuario logueado (cliente o staff: no depende
+ * de rol, cualquiera con sesión puede usarla — ver /cuenta y
+ * /admin/configuracion).
+ *
+ * Antes de aplicar el cambio, reautentica con signInWithPassword usando la
+ * contraseña actual: el SDK de Supabase no expone una verificación de
+ * contraseña actual por separado, y updateUser() por sí solo no la exige
+ * (alcanza con tener sesión activa), así que sin este paso cualquiera con
+ * la sesión abierta podría cambiar la contraseña sin saber la actual.
+ */
+export async function changePassword(
+  _prevState: ChangePasswordActionState,
+  formData: FormData
+): Promise<ChangePasswordActionState> {
+  const parsed = changePasswordSchema.safeParse({
+    current_password: String(formData.get("current_password") ?? ""),
+    new_password: String(formData.get("new_password") ?? ""),
+    confirm_password: String(formData.get("confirm_password") ?? ""),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Revisá los datos del formulario.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { status: "error", message: "Tu sesión expiró. Volvé a iniciar sesión." };
+  }
+
+  const { error: reauthError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.current_password,
+  });
+
+  if (reauthError) {
+    return {
+      status: "error",
+      message: "La contraseña actual no es correcta.",
+      fieldErrors: { current_password: ["La contraseña actual no es correcta."] },
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.new_password });
+
+  if (error) {
+    return { status: "error", message: "No pudimos actualizar tu contraseña. Probá de nuevo." };
+  }
+
+  return { status: "success", message: "Contraseña actualizada." };
 }

@@ -5,11 +5,12 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileForm } from "@/features/account/ProfileForm";
+import { ChangePasswordForm } from "@/features/account/ChangePasswordForm";
 import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
 import { ContactForm } from "@/features/home/ContactForm";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { ContactMessage, ContactMessageReply, Order, Profile } from "@/types/database";
+import type { ContactMessage, ContactMessageReply, Order, Profile, Project } from "@/types/database";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false, follow: false } };
 
@@ -54,13 +55,20 @@ export default async function CuentaPage() {
     redirect("/admin");
   }
 
-  const [{ data: orders }, { data: messages }] = await Promise.all([
+  const [{ data: orders }, { data: messages }, { data: sharedProjects }] = await Promise.all([
     supabase.from("orders").select("*").order("created_at", { ascending: false }),
     supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
+    // Proyectos privados a los que este usuario tiene acceso otorgado (ver
+    // project_access / has_project_access en 0011_project_expansion.sql).
+    // No hace falta filtrar por email acá: la RLS de `projects` ya solo
+    // devuelve los privados donde el usuario logueado tiene acceso (o es
+    // staff, pero a un staff ya lo redirigimos a /admin más arriba).
+    supabase.from("projects").select("*").eq("visibility", "private").order("created_at", { ascending: false }),
   ]);
 
   const typedOrders = (orders ?? []) as Order[];
   const typedMessages = (messages ?? []) as ContactMessage[];
+  const typedSharedProjects = (sharedProjects ?? []) as Project[];
 
   // RLS (contact_message_replies_select_own) ya limita esto a respuestas de
   // mensajes propios, pero igual filtramos por los ids que ya tenemos.
@@ -94,9 +102,43 @@ export default async function CuentaPage() {
           <div className="mt-4">
             <ProfileForm profile={profile as Profile | null} email={user.email ?? ""} />
           </div>
+
+          <div className="mt-10 border-t border-secondary/20 pt-6">
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Cambiar contraseña</h2>
+            <div className="mt-4">
+              <ChangePasswordForm />
+            </div>
+          </div>
         </div>
 
         <div className="space-y-12">
+          {typedSharedProjects.length > 0 && (
+            <div>
+              <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis proyectos</h2>
+              <p className="mt-1 text-xs text-foreground/40">
+                Proyectos privados a los que te dieron acceso.
+              </p>
+              <ul className="mt-4 space-y-3">
+                {typedSharedProjects.map((project) => (
+                  <li key={project.id}>
+                    <Link
+                      href={`/proyectos/${project.slug}`}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-secondary/30 bg-card/40 p-4 transition-colors duration-220 hover:border-primary/60"
+                    >
+                      <div>
+                        <p className="font-display text-sm uppercase tracking-tight text-foreground">
+                          {project.make} {project.model} · {project.year}
+                        </p>
+                        <p className="mt-1 text-xs text-foreground/40">{project.summary}</p>
+                      </div>
+                      <Badge tone="default">Privado</Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div>
             <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis pedidos</h2>
             {typedOrders.length === 0 ? (

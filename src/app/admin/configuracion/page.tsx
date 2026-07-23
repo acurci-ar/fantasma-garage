@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteSettingsForm } from "@/features/admin/SiteSettingsForm";
+import { ChangePasswordForm } from "@/features/account/ChangePasswordForm";
 import { getSiteSettings } from "@/lib/content/queries";
 
 export const metadata: Metadata = { title: "Configuración", robots: { index: false, follow: false } };
@@ -17,6 +18,14 @@ export default async function AdminConfiguracionPage() {
 
       <div className="mt-8 max-w-3xl">
         <SiteSettingsForm settings={settings} />
+      </div>
+
+      <div className="mt-12 max-w-3xl border-t border-secondary/20 pt-8">
+        <h2 className="font-display text-lg uppercase tracking-tight text-foreground">Tu cuenta</h2>
+        <p className="mt-2 text-sm text-foreground/60">Cambiar la contraseña de tu propio usuario de staff.</p>
+        <div className="mt-6">
+          <ChangePasswordForm />
+        </div>
       </div>
     </div>
   );
