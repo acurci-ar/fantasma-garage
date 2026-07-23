@@ -6,7 +6,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import type { ProjectImageActionState } from "@/actions/admin/projects";
-import type { ProjectImage } from "@/types/database";
+import type { ProjectImage, ProjectStage } from "@/types/database";
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -32,10 +32,12 @@ function SubmitButton({ label }: { label: string }) {
 export function ProjectImageForm({
   action,
   image,
+  stages = [],
   submitLabel = "Agregar",
 }: {
   action: (state: ProjectImageActionState, formData: FormData) => Promise<ProjectImageActionState>;
   image?: ProjectImage;
+  stages?: ProjectStage[];
   submitLabel?: string;
 }) {
   const [state, formAction] = useFormState(action, initialState);
@@ -68,13 +70,33 @@ export function ProjectImageForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClasses}>Etapa (opcional)</label>
-          <input name="stage" type="text" placeholder="Chapa, motor, pintura..." defaultValue={image?.stage ?? ""} className={inputClasses} />
+          <label className={labelClasses}>Hito de la línea de tiempo (opcional)</label>
+          <select name="stage_id" defaultValue={image?.stage_id ?? ""} className={inputClasses}>
+            <option value="">Sin asociar</option>
+            {stages.map((stage) => (
+              <option key={stage.id} value={stage.id}>
+                {stage.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className={labelClasses}>Orden</label>
           <input name="position" type="number" min={0} defaultValue={image?.position ?? 0} className={inputClasses} />
         </div>
+      </div>
+
+      <input type="hidden" name="stage" defaultValue={image?.stage ?? ""} />
+
+      <div>
+        <label className={labelClasses}>Visibilidad</label>
+        <select name="visibility" defaultValue={image?.visibility ?? "public"} className={inputClasses}>
+          <option value="public">Pública</option>
+          <option value="private">Privada</option>
+        </select>
+        <p className="mt-1 text-xs text-foreground/40">
+          Si el proyecto es privado, ninguna foto se ve públicamente aunque acá diga &quot;pública&quot;.
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-4">

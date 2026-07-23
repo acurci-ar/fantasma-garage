@@ -3,6 +3,8 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Section } from "@/components/ui/Section";
 import { Badge } from "@/components/ui/Badge";
+import { ProjectTimeline } from "@/features/project/ProjectTimeline";
+import { ProjectVideoGrid } from "@/features/project/ProjectVideoGrid";
 import { getFeaturedProjects, getProjectBySlug } from "@/lib/content/queries";
 
 export async function generateStaticParams() {
@@ -82,6 +84,15 @@ export default async function ProjectPage({ params }: { params: { slug: string }
           </p>
         </div>
 
+        {project.stages && project.stages.length > 0 && (
+          <div className="mt-14">
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Línea de tiempo</h2>
+            <div className="mt-6">
+              <ProjectTimeline stages={project.stages} />
+            </div>
+          </div>
+        )}
+
         {project.images.length > 0 && (
           <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {project.images.map((image) => (
@@ -95,6 +106,15 @@ export default async function ProjectPage({ params }: { params: { slug: string }
                 />
               </div>
             ))}
+          </div>
+        )}
+
+        {project.videos && project.videos.length > 0 && (
+          <div className="mt-14">
+            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Videos</h2>
+            <div className="mt-6">
+              <ProjectVideoGrid videos={project.videos} title={project.title} />
+            </div>
           </div>
         )}
       </Section>

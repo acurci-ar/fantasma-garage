@@ -216,6 +216,11 @@ test("projectSchema acepta un proyecto válido y castea el año", () => {
     seo_title: "",
     seo_description: "",
     cover_url: "/images/proyectos/nova.webp",
+    vin: "",
+    engine: "",
+    transmission: "",
+    client_name: "",
+    visibility: "public",
   });
   assert.equal(result.success, true);
   if (result.success) assert.equal(result.data.year, 1972);

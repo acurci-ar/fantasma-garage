@@ -59,16 +59,29 @@ export async function getFeaturedProjects(): Promise<Project[]> {
   }, PROJECTS);
 }
 
+/**
+ * Proyecto con fotos, videos y línea de tiempo, para la ficha pública
+ * (/proyectos/[slug]). RLS ya filtra qué ve el visitante actual: si el
+ * proyecto es privado, esta consulta solo devuelve datos si es staff o
+ * tiene project_access; las fotos/videos privados quedan afuera aunque el
+ * proyecto sí sea público (ver 0011/0012_project_*.sql). Documentación,
+ * presupuesto, gastos y horas nunca se traen acá: son siempre privados y
+ * viven solo en /admin.
+ */
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
   return safeQuery(async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("projects")
-      .select("*, images:project_images(*)")
+      .select("*, images:project_images(*), videos:project_videos(*), stages:project_stages(*)")
       .eq("slug", slug)
       .single();
     if (error) throw error;
-    return data as Project;
+    const project = data as Project;
+    return {
+      ...project,
+      stages: (project.stages ?? []).filter((s) => s.enabled).sort((a, b) => a.position - b.position),
+    };
   }, PROJECTS.find((p) => p.slug === slug) ?? null);
 }
 

@@ -90,3 +90,71 @@ export async function uploadImageToBucket(
   const { data: thumbData } = supabase.storage.from(bucket).getPublicUrl(thumbPath);
   return { url: displayData.publicUrl, thumbUrl: thumbData.publicUrl };
 }
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(-100);
+}
+
+/**
+ * Sube un archivo tal cual (sin procesar con sharp) a un bucket público y
+ * devuelve su URL pública. Pensado para videos propios cortos
+ * (bucket 'project-videos'): a diferencia de las fotos, no tiene sentido
+ * generar una miniatura acá.
+ */
+export async function uploadFileToBucket(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  file: File,
+  bucket: string,
+  folder: string
+): Promise<{ url: string } | { error: string }> {
+  const path = `${folder}/${Date.now()}-${sanitizeFilename(file.name)}`;
+  const arrayBuffer = await file.arrayBuffer();
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(path, Buffer.from(arrayBuffer), { upsert: true, contentType: file.type || undefined });
+  if (error) return { error: "No pudimos subir el archivo. Probá de nuevo." };
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return { url: data.publicUrl };
+}
+
+/**
+ * Sube un archivo a un bucket PRIVADO (ej. 'project-private') y devuelve el
+ * path del objeto, no una URL pública — el bucket no tiene lectura pública,
+ * así que la única forma de servir el archivo es con una signed URL
+ * generada en el momento (ver getSignedFileUrl), solo para quien ya pasó
+ * has_project_access() a nivel de fila.
+ *
+ * `folder` tiene que ser el project_id: la policy de RLS del bucket
+ * (0012_project_tracking.sql) matchea has_project_access() contra el primer
+ * segmento del path del objeto.
+ */
+export async function uploadPrivateFile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  file: File,
+  bucket: string,
+  folder: string
+): Promise<{ path: string } | { error: string }> {
+  const path = `${folder}/${Date.now()}-${sanitizeFilename(file.name)}`;
+  const arrayBuffer = await file.arrayBuffer();
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(path, Buffer.from(arrayBuffer), { upsert: true, contentType: file.type || undefined });
+  if (error) return { error: "No pudimos subir el archivo. Probá de nuevo." };
+
+  return { path };
+}
+
+/** Signed URL de corta duración para servir un archivo de un bucket privado. Null si el objeto no existe o algo falla. */
+export async function getSignedFileUrl(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  bucket: string,
+  path: string,
+  expiresInSeconds = 3600
+): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresInSeconds);
+  if (error) return null;
+  return data.signedUrl;
+}

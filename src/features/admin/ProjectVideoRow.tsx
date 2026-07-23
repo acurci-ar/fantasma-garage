@@ -2,16 +2,16 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ProjectImageForm } from "@/features/admin/ProjectImageForm";
-import { updateProjectImage, deleteProjectImage } from "@/actions/admin/projects";
-import type { ProjectImage, ProjectStage } from "@/types/database";
+import { ProjectVideoForm } from "@/features/admin/ProjectVideoForm";
+import { updateProjectVideo, deleteProjectVideo } from "@/actions/admin/projects";
+import type { ProjectStage, ProjectVideo } from "@/types/database";
 
-export function ProjectImageRow({
-  image,
+export function ProjectVideoRow({
+  video,
   projectId,
   stages = [],
 }: {
-  image: ProjectImage;
+  video: ProjectVideo;
   projectId: string;
   stages?: ProjectStage[];
 }) {
@@ -19,9 +19,9 @@ export function ProjectImageRow({
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
-    if (!window.confirm("¿Eliminar esta imagen?")) return;
+    if (!window.confirm("¿Eliminar este video?")) return;
     startTransition(async () => {
-      const result = await deleteProjectImage(image.id, projectId);
+      const result = await deleteProjectVideo(video.id, projectId);
       if (result.status === "error") window.alert(result.message);
       router.refresh();
     });
@@ -29,9 +29,9 @@ export function ProjectImageRow({
 
   return (
     <div className="space-y-3">
-      <ProjectImageForm
-        action={updateProjectImage.bind(null, image.id, projectId)}
-        image={image}
+      <ProjectVideoForm
+        action={updateProjectVideo.bind(null, video.id, projectId)}
+        video={video}
         stages={stages}
         submitLabel="Guardar cambios"
       />
@@ -41,7 +41,7 @@ export function ProjectImageRow({
         disabled={isPending}
         className="text-xs font-semibold uppercase tracking-wide text-red-400 transition-colors duration-220 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? "Eliminando..." : "Eliminar esta imagen"}
+        {isPending ? "Eliminando..." : "Eliminar este video"}
       </button>
     </div>
   );

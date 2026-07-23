@@ -118,6 +118,50 @@ export function ProjectForm({
         </div>
       </div>
 
+      <div className="grid gap-5 sm:grid-cols-3">
+        <div>
+          <label htmlFor="vin" className={labelClasses}>
+            VIN (opcional)
+          </label>
+          <input id="vin" name="vin" type="text" defaultValue={project?.vin ?? ""} className={inputClasses} />
+          <FieldError errors={state.fieldErrors?.vin} />
+        </div>
+        <div>
+          <label htmlFor="engine" className={labelClasses}>
+            Motor (opcional)
+          </label>
+          <input id="engine" name="engine" type="text" defaultValue={project?.engine ?? ""} className={inputClasses} />
+          <FieldError errors={state.fieldErrors?.engine} />
+        </div>
+        <div>
+          <label htmlFor="transmission" className={labelClasses}>
+            Caja (opcional)
+          </label>
+          <input
+            id="transmission"
+            name="transmission"
+            type="text"
+            defaultValue={project?.transmission ?? ""}
+            className={inputClasses}
+          />
+          <FieldError errors={state.fieldErrors?.transmission} />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="client_name" className={labelClasses}>
+          Cliente (opcional — siempre privado, nunca se muestra en la ficha pública)
+        </label>
+        <input
+          id="client_name"
+          name="client_name"
+          type="text"
+          defaultValue={project?.client_name ?? ""}
+          className={inputClasses}
+        />
+        <FieldError errors={state.fieldErrors?.client_name} />
+      </div>
+
       <div>
         <label htmlFor="summary" className={labelClasses}>
           Resumen (se ve en la tarjeta de /proyectos)
@@ -134,7 +178,7 @@ export function ProjectForm({
         <FieldError errors={state.fieldErrors?.story} />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-3">
         <div>
           <label htmlFor="status" className={labelClasses}>
             Etapa
@@ -144,6 +188,18 @@ export function ProjectForm({
             <option value="finalizado">Finalizado</option>
             <option value="en_pausa">En pausa</option>
           </select>
+        </div>
+        <div>
+          <label htmlFor="visibility" className={labelClasses}>
+            Visibilidad
+          </label>
+          <select id="visibility" name="visibility" defaultValue={project?.visibility ?? "public"} className={inputClasses}>
+            <option value="public">Público</option>
+            <option value="private">Privado</option>
+          </select>
+          <p className="mt-1 text-xs text-foreground/40">
+            Si es privado, solo lo ven admin/staff y los emails con acceso otorgado (ver más abajo).
+          </p>
         </div>
         <label className="flex items-center gap-2 self-end pb-3 text-sm text-foreground/70">
           <input

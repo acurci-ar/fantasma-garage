@@ -37,6 +37,8 @@ export interface NewsletterSubscriber {
 export interface Profile {
   id: UUID;
   full_name: string | null;
+  /** Copia de auth.users.email (ver 0011_project_expansion.sql), usada para resolver accesos a proyectos otorgados por email. */
+  email: string | null;
   phone: string | null;
   document_number: string | null;
   shipping_street: string | null;
@@ -161,6 +163,9 @@ export interface InventoryMovement {
 
 export type ProjectStatus = "en_curso" | "finalizado" | "en_pausa";
 
+/** Público: visible para cualquiera. Privado: solo staff o accesos otorgados (ver ProjectAccess). */
+export type ProjectVisibility = "public" | "private";
+
 export interface ProjectImage {
   id: UUID;
   project_id: UUID;
@@ -168,10 +173,14 @@ export interface ProjectImage {
   /** Miniatura generada del lado del servidor al subir el archivo (ver lib/supabase/upload.ts). Null si la imagen se cargó pegando una URL. */
   thumb_url: string | null;
   alt: string;
+  /** Etiqueta de etapa en texto libre (legado). Preferir stage_id para asociar a un hito real de la línea de tiempo. */
   stage: string | null;
+  stage_id: UUID | null;
   position: number;
   is_before: boolean;
   is_after: boolean;
+  /** Si el proyecto es privado, ninguna foto se ve públicamente aunque sea 'public'. Si el proyecto es público, esta foto puntual puede seguir siendo 'private'. */
+  visibility: ProjectVisibility;
 }
 
 export interface Project {
@@ -190,7 +199,110 @@ export interface Project {
   featured: boolean;
   seo_title: string | null;
   seo_description: string | null;
+  vin: string | null;
+  engine: string | null;
+  transmission: string | null;
+  /** Siempre privado: solo llega al cliente cuando has_project_access() es true (ver RLS). */
+  client_name: string | null;
+  visibility: ProjectVisibility;
   images: ProjectImage[];
+  videos?: ProjectVideo[];
+  stages?: ProjectStage[];
+  access?: ProjectAccess[];
+  /** Solo presentes para quien tiene has_project_access() (staff o acceso otorgado) — nunca se traen en las vistas públicas. */
+  documents?: ProjectDocument[];
+  budget?: ProjectBudget | null;
+  expenses?: ProjectExpense[];
+  time_entries?: ProjectTimeEntry[];
+}
+
+export interface ProjectAccess {
+  id: UUID;
+  project_id: UUID;
+  email: string;
+  invited_by: UUID | null;
+  created_at: ISODateString;
+}
+
+export type ProjectStageStatus = "pendiente" | "en_curso" | "completo";
+
+export interface ProjectStageTemplate {
+  id: UUID;
+  key: string;
+  name: string;
+  position: number;
+}
+
+export interface ProjectStage {
+  id: UUID;
+  project_id: UUID;
+  template_id: UUID | null;
+  name: string;
+  position: number;
+  enabled: boolean;
+  status: ProjectStageStatus;
+  started_at: string | null;
+  completed_at: string | null;
+  notes: string | null;
+  created_at: ISODateString;
+}
+
+export type ProjectVideoKind = "youtube" | "file";
+
+export interface ProjectVideo {
+  id: UUID;
+  project_id: UUID;
+  kind: ProjectVideoKind;
+  youtube_url: string | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  visibility: ProjectVisibility;
+  stage_id: UUID | null;
+  position: number;
+  created_at: ISODateString;
+}
+
+export interface ProjectDocument {
+  id: UUID;
+  project_id: UUID;
+  name: string;
+  /** Path del objeto en el bucket privado 'project-private', no una URL pública. Se resuelve a signed URL en el server (ver actions/admin/projects.ts). */
+  file_path: string;
+  uploaded_by: UUID | null;
+  created_at: ISODateString;
+}
+
+export interface ProjectBudget {
+  project_id: UUID;
+  amount: number | null;
+  currency: "ARS" | "USD";
+  notes: string | null;
+  updated_at: ISODateString;
+}
+
+export type ProjectExpenseKind = "gasto" | "extra";
+
+export interface ProjectExpense {
+  id: UUID;
+  project_id: UUID;
+  kind: ProjectExpenseKind;
+  description: string;
+  amount: number;
+  currency: "ARS" | "USD";
+  expense_date: string;
+  category: string | null;
+  created_by: UUID | null;
+  created_at: ISODateString;
+}
+
+export interface ProjectTimeEntry {
+  id: UUID;
+  project_id: UUID;
+  description: string | null;
+  hours: number;
+  entry_date: string;
+  actor_id: UUID | null;
+  created_at: ISODateString;
 }
 
 export type GalleryType = "sema" | "amigos" | "trabajos";
