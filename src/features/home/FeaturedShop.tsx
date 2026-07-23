@@ -41,7 +41,7 @@ export function FeaturedShop({ products }: { products: Product[] }) {
                 )}
                 {product.stock <= 0 && (
                   <span className="absolute left-3 top-3 rounded-sm bg-background/85 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/70">
-                    Sin stock
+                    A pedido
                   </span>
                 )}
               </div>

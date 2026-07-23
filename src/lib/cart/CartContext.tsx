@@ -25,6 +25,11 @@ function sameLine(item: CartItem, productId: string, variantId: string | null) {
   return item.productId === productId && item.variantId === variantId;
 }
 
+/** Sin stock (<=0) = producto "a pedido": no hay tope por depósito. Con stock, sigue acotado a lo disponible. Exportado para que CartDrawer/CartPageContent usen el mismo criterio al deshabilitar el "+". */
+export function maxQuantityForStock(stock: number): number {
+  return stock > 0 ? stock : Infinity;
+}
+
 /**
  * Estado del carrito en el cliente, persistido en localStorage.
  *
@@ -59,15 +64,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   function addItem(item: Omit<CartItem, "quantity">, quantity = 1) {
+    // stock <= 0 = producto "a pedido": no lo fabricamos/conseguimos desde
+    // stock de depósito, así que no tiene sentido tope de cantidad por
+    // stock (ver maxQuantityForStock). Sí se mantiene el tope de 1-99 de
+    // checkoutItemSchema más adelante en el flujo.
+    const max = maxQuantityForStock(item.stock);
     setItems((prev) => {
       const existing = prev.find((i) => sameLine(i, item.productId, item.variantId));
       if (existing) {
-        const nextQty = Math.min(existing.quantity + quantity, Math.max(item.stock, 1));
+        const nextQty = Math.min(existing.quantity + quantity, max);
         return prev.map((i) =>
           sameLine(i, item.productId, item.variantId) ? { ...i, quantity: nextQty, stock: item.stock } : i
         );
       }
-      return [...prev, { ...item, quantity: Math.min(Math.max(quantity, 1), Math.max(item.stock, 1)) }];
+      return [...prev, { ...item, quantity: Math.min(Math.max(quantity, 1), max) }];
     });
     setIsOpen(true);
   }
@@ -76,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) =>
       prev
         .map((i) =>
-          sameLine(i, productId, variantId) ? { ...i, quantity: Math.max(0, Math.min(quantity, i.stock)) } : i
+          sameLine(i, productId, variantId) ? { ...i, quantity: Math.max(0, Math.min(quantity, maxQuantityForStock(i.stock))) } : i
         )
         .filter((i) => i.quantity > 0)
     );

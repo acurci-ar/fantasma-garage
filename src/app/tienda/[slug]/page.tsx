@@ -66,7 +66,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
           )}
           {outOfStock && (
             <span className="absolute left-4 top-4 rounded-sm bg-background/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
-              Sin stock
+              A pedido
             </span>
           )}
         </div>
@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
           <div className="mt-6 flex items-center gap-3">
             <Badge tone={outOfStock ? "default" : "primary"}>
-              {outOfStock ? "Sin stock" : `${product.stock} disponibles`}
+              {outOfStock ? "A pedido" : `${product.stock} disponibles`}
             </Badge>
           </div>
 

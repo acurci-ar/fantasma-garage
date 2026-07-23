@@ -97,7 +97,10 @@ export async function createOrder(input: unknown): Promise<CheckoutActionState> 
       if (!product || product.status !== "published") {
         return { status: "error", message: "Un producto de tu carrito ya no está disponible." };
       }
-      if (product.stock < item.quantity) {
+      // stock <= 0 = producto "a pedido" (ver AddToCartButton): se puede
+      // pedir igual, no bloqueamos el checkout. Si hay stock real, sí se
+      // respeta el límite de depósito.
+      if (product.stock > 0 && product.stock < item.quantity) {
         return {
           status: "error",
           message: `No hay stock suficiente de "${product.name}" (quedan ${product.stock}).`,
@@ -146,21 +149,35 @@ export async function createOrder(input: unknown): Promise<CheckoutActionState> 
     // Reserva de stock: se descuenta ahora, no cuando se confirme el pago
     // (todavía no hay webhook de Mercado Pago). Queda registrado en
     // inventory_movements para que /admin pueda auditarlo o revertirlo si
-    // el pedido se cancela.
+    // el pedido se cancela. Los ítems "a pedido" (stock <= 0 al momento de
+    // pedirlos) no descuentan stock — ya está en 0 y fabricarlo/conseguirlo
+    // no es un movimiento de depósito — pero sí queda el registro para que
+    // el staff sepa que hay que coordinarlo.
     for (const item of orderItems) {
       const product = productMap.get(item.product_id)!;
-      await admin
-        .from("products")
-        .update({ stock: product.stock - item.quantity })
-        .eq("id", item.product_id);
-      await admin.from("inventory_movements").insert({
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        type: "reserva",
-        quantity: -item.quantity,
-        reason: `Pedido ${order.id} (pago pendiente)`,
-        actor_id: user?.id ?? null,
-      });
+      if (product.stock > 0) {
+        await admin
+          .from("products")
+          .update({ stock: Math.max(product.stock - item.quantity, 0) })
+          .eq("id", item.product_id);
+        await admin.from("inventory_movements").insert({
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          type: "reserva",
+          quantity: -item.quantity,
+          reason: `Pedido ${order.id} (pago pendiente)`,
+          actor_id: user?.id ?? null,
+        });
+      } else {
+        await admin.from("inventory_movements").insert({
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          type: "reserva",
+          quantity: 0,
+          reason: `Pedido ${order.id} — producto a pedido (sin stock): coordinar fabricación/compra.`,
+          actor_id: user?.id ?? null,
+        });
+      }
     }
 
     return { status: "success", message: "Pedido creado.", orderId: order.id };

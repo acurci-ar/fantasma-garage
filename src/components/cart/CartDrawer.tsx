@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCart } from "@/lib/cart/CartContext";
+import { useCart, maxQuantityForStock } from "@/lib/cart/CartContext";
 import { formatCurrency } from "@/lib/utils/format";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
@@ -82,7 +82,7 @@ export function CartDrawer() {
                             type="button"
                             className="flex h-8 w-8 items-center justify-center text-foreground/70 transition-colors duration-220 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
                             onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)}
-                            disabled={item.quantity >= item.stock}
+                            disabled={item.quantity >= maxQuantityForStock(item.stock)}
                             aria-label={`Sumar cantidad de ${item.name}`}
                           >
                             +
