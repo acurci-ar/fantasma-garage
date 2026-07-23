@@ -9,6 +9,7 @@ import { ProjectImageRow } from "@/features/admin/ProjectImageRow";
 import { ProjectVideoForm } from "@/features/admin/ProjectVideoForm";
 import { ProjectVideoRow } from "@/features/admin/ProjectVideoRow";
 import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
+import { CollapsibleFormSection } from "@/features/admin/CollapsibleFormSection";
 import { ProjectDocumentForm } from "@/features/admin/ProjectDocumentForm";
 import { ProjectDocumentRow } from "@/features/admin/ProjectDocumentRow";
 import { ProjectStageManager } from "@/features/admin/ProjectStageManager";
@@ -114,19 +115,22 @@ export default async function EditProjectPage({ params }: { params: { id: string
                 )}
 
                 <div className="mt-6">
-                  <BulkImageUploadForm key={images.length} action={addProjectImages.bind(null, id)} />
-                </div>
-
-                <div className="mt-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
-                    O agregar una foto con sus datos
-                  </p>
-                  <ProjectImageForm
-                    key={images.length}
-                    action={addProjectImage.bind(null, id)}
-                    stages={typedStages}
-                    submitLabel="Agregar"
-                  />
+                  <CollapsibleFormSection addLabel="+ Agregar fotos">
+                    <div className="space-y-6">
+                      <BulkImageUploadForm key={images.length} action={addProjectImages.bind(null, id)} />
+                      <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">
+                          O agregar una foto con sus datos
+                        </p>
+                        <ProjectImageForm
+                          key={images.length}
+                          action={addProjectImage.bind(null, id)}
+                          stages={typedStages}
+                          submitLabel="Agregar"
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleFormSection>
                 </div>
               </section>
 
@@ -145,13 +149,14 @@ export default async function EditProjectPage({ params }: { params: { id: string
                 )}
 
                 <div className="mt-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-foreground/60">Agregar video</p>
-                  <ProjectVideoForm
-                    key={typedVideos.length}
-                    action={addProjectVideo.bind(null, id)}
-                    stages={typedStages}
-                    submitLabel="Agregar"
-                  />
+                  <CollapsibleFormSection addLabel="+ Agregar video">
+                    <ProjectVideoForm
+                      key={typedVideos.length}
+                      action={addProjectVideo.bind(null, id)}
+                      stages={typedStages}
+                      submitLabel="Agregar"
+                    />
+                  </CollapsibleFormSection>
                 </div>
               </section>
             </div>
@@ -173,19 +178,20 @@ export default async function EditProjectPage({ params }: { params: { id: string
               <ProjectDocumentForm key={documentsWithUrls.length} projectId={id} />
             </div>
           }
-          seguimiento={
+          timeline={
+            <div className="max-w-2xl space-y-4">
+              <p className="text-xs text-foreground/40">
+                Se muestra públicamente si el proyecto es público (ver /proyectos/[slug]) — a diferencia de
+                presupuesto/gastos/horas, que son siempre privados.
+              </p>
+              <ProjectStageManager projectId={id} stages={typedStages} />
+            </div>
+          }
+          presupuesto={
             <div className="max-w-2xl space-y-12">
               <p className="text-xs text-foreground/40">
-                Línea de tiempo, presupuesto, gastos/extras y horas son siempre privados: solo los ven admin/staff y
-                los usuarios con acceso otorgado.
+                Siempre privado: solo lo ven admin/staff y los usuarios con acceso otorgado.
               </p>
-
-              <section>
-                <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Línea de tiempo</h2>
-                <div className="mt-4">
-                  <ProjectStageManager projectId={id} stages={typedStages} />
-                </div>
-              </section>
 
               <section>
                 <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Presupuesto inicial</h2>
@@ -200,13 +206,14 @@ export default async function EditProjectPage({ params }: { params: { id: string
                   <ProjectExpenseManager projectId={id} expenses={typedExpenses} />
                 </div>
               </section>
-
-              <section>
-                <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Horas trabajadas</h2>
-                <div className="mt-4">
-                  <ProjectTimeEntryManager projectId={id} entries={typedTimeEntries} />
-                </div>
-              </section>
+            </div>
+          }
+          horas={
+            <div className="max-w-2xl space-y-4">
+              <p className="text-xs text-foreground/40">
+                Siempre privado: solo lo ven admin/staff y los usuarios con acceso otorgado.
+              </p>
+              <ProjectTimeEntryManager projectId={id} entries={typedTimeEntries} />
             </div>
           }
         />

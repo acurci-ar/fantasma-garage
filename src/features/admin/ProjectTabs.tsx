@@ -7,25 +7,31 @@ const TABS = [
   { key: "ficha", label: "Ficha" },
   { key: "multimedia", label: "Multimedia" },
   { key: "documentos", label: "Documentos" },
-  { key: "seguimiento", label: "Seguimiento presupuesto" },
+  { key: "timeline", label: "Línea de tiempo" },
+  { key: "presupuesto", label: "Presupuesto" },
+  { key: "horas", label: "Horas" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
-/** Solapas del ABMC de proyecto: Ficha (datos + accesos), Multimedia (fotos/videos), Documentos (siempre privado) y Seguimiento presupuesto (línea de tiempo + presupuesto + gastos/extras + horas, siempre privado). */
+/** Solapas del ABMC de proyecto: Ficha (datos + accesos), Multimedia (fotos/videos), Documentos (siempre privado), Línea de tiempo (hitos), Presupuesto (presupuesto inicial + gastos/extras) y Horas (registro de horas) — estas últimas tres siempre privadas salvo la línea de tiempo, que sigue la visibilidad del proyecto. */
 export function ProjectTabs({
   ficha,
   multimedia,
   documentos,
-  seguimiento,
+  timeline,
+  presupuesto,
+  horas,
 }: {
   ficha: ReactNode;
   multimedia: ReactNode;
   documentos: ReactNode;
-  seguimiento: ReactNode;
+  timeline: ReactNode;
+  presupuesto: ReactNode;
+  horas: ReactNode;
 }) {
   const [active, setActive] = useState<TabKey>("ficha");
-  const content: Record<TabKey, ReactNode> = { ficha, multimedia, documentos, seguimiento };
+  const content: Record<TabKey, ReactNode> = { ficha, multimedia, documentos, timeline, presupuesto, horas };
 
   return (
     <div>

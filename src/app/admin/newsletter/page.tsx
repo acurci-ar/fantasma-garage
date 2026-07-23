@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { NewsletterSubNav } from "@/features/admin/NewsletterSubNav";
 import { NewsletterSubscriberStatusButton } from "@/features/admin/NewsletterSubscriberStatusButton";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { NewsletterSubscriber } from "@/types/database";
@@ -21,8 +22,48 @@ async function getSubscribers(): Promise<NewsletterSubscriber[]> {
   return (data ?? []) as NewsletterSubscriber[];
 }
 
+const columns: DataTableColumn[] = [
+  { id: "email", header: "Email", sortable: true },
+  { id: "intereses", header: "Intereses", sortable: true },
+  { id: "alta", header: "Alta", sortable: true },
+  { id: "estado", header: "Estado", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
+
 export default async function AdminNewsletterPage() {
   const subscribers = await getSubscribers();
+
+  const rows: DataTableRow[] = subscribers.map((subscriber) => {
+    const interests = subscriber.interests.length > 0 ? subscriber.interests.join(", ") : "—";
+    return {
+      key: subscriber.id,
+      filterText: `${subscriber.email} ${interests} ${subscriber.status}`,
+      sortValues: {
+        email: subscriber.email.toLowerCase(),
+        intereses: interests.toLowerCase(),
+        alta: new Date(subscriber.created_at).getTime(),
+        estado: subscriber.status,
+      },
+      cells: {
+        email: <span className="text-foreground">{subscriber.email}</span>,
+        intereses: <span className="text-foreground/60">{interests}</span>,
+        alta: <span className="text-foreground/60">{formatDate(subscriber.created_at)}</span>,
+        estado: (
+          <Badge tone={subscriber.status === "activo" ? "primary" : "default"}>
+            {subscriber.status === "activo" ? "Activo" : "Baja"}
+          </Badge>
+        ),
+        acciones: (
+          <div className="flex items-center justify-end gap-4">
+            <NewsletterSubscriberStatusButton id={subscriber.id} status={subscriber.status} />
+            <Link href={`/admin/newsletter/${subscriber.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+              Editar
+            </Link>
+          </div>
+        ),
+      },
+    };
+  });
 
   return (
     <div>
@@ -44,50 +85,9 @@ export default async function AdminNewsletterPage() {
         </p>
       )}
 
-      {isSupabaseConfigured() && subscribers.length === 0 && (
-        <p className="mt-10 text-sm text-foreground/50">Todavía no hay suscriptores.</p>
-      )}
-
-      {subscribers.length > 0 && (
-        <div className="mt-8 overflow-x-auto rounded-sm border border-secondary/30">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Intereses</th>
-                <th className="px-4 py-3 font-semibold">Alta</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/15">
-              {subscribers.map((subscriber) => (
-                <tr key={subscriber.id} className="hover:bg-card/30">
-                  <td className="px-4 py-3 text-foreground">{subscriber.email}</td>
-                  <td className="px-4 py-3 text-foreground/60">
-                    {subscriber.interests.length > 0 ? subscriber.interests.join(", ") : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/60">{formatDate(subscriber.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={subscriber.status === "activo" ? "primary" : "default"}>
-                      {subscriber.status === "activo" ? "Activo" : "Baja"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-4">
-                      <NewsletterSubscriberStatusButton id={subscriber.id} status={subscriber.status} />
-                      <Link
-                        href={`/admin/newsletter/${subscriber.id}`}
-                        className="text-xs font-semibold uppercase text-primary hover:underline"
-                      >
-                        Editar
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isSupabaseConfigured() && (
+        <div className="mt-8">
+          <DataTable columns={columns} rows={rows} emptyMessage="Todavía no hay suscriptores." searchPlaceholder="Buscar email..." />
         </div>
       )}
     </div>

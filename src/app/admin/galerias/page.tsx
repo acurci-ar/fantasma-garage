@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Gallery } from "@/types/database";
 
@@ -17,8 +18,35 @@ async function getGalleries(): Promise<Gallery[]> {
   return (data ?? []) as Gallery[];
 }
 
+const columns: DataTableColumn[] = [
+  { id: "galeria", header: "Galería", sortable: true },
+  { id: "estado", header: "Estado", sortable: true },
+  { id: "fotos", header: "Fotos", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
+
 export default async function AdminGalleriesPage() {
   const galleries = await getGalleries();
+
+  const rows: DataTableRow[] = galleries.map((gallery) => ({
+    key: gallery.id,
+    filterText: `${gallery.title} ${gallery.status}`,
+    sortValues: {
+      galeria: gallery.title.toLowerCase(),
+      estado: gallery.status,
+      fotos: gallery.images?.length ?? 0,
+    },
+    cells: {
+      galeria: <span className="text-foreground">{gallery.title}</span>,
+      estado: <Badge tone={gallery.status === "published" ? "primary" : "default"}>{gallery.status}</Badge>,
+      fotos: <span className="text-foreground/60">{gallery.images?.length ?? 0}</span>,
+      acciones: (
+        <Link href={`/admin/galerias/${gallery.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+          Editar
+        </Link>
+      ),
+    },
+  }));
 
   return (
     <div>
@@ -34,37 +62,9 @@ export default async function AdminGalleriesPage() {
         </p>
       )}
 
-      {galleries.length > 0 && (
-        <div className="mt-8 overflow-x-auto rounded-sm border border-secondary/30">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Galería</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3 font-semibold">Fotos</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/15">
-              {galleries.map((gallery) => (
-                <tr key={gallery.id} className="hover:bg-card/30">
-                  <td className="px-4 py-3 text-foreground">{gallery.title}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={gallery.status === "published" ? "primary" : "default"}>{gallery.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-foreground/60">{gallery.images?.length ?? 0}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/galerias/${gallery.id}`}
-                      className="text-xs font-semibold uppercase text-primary hover:underline"
-                    >
-                      Editar
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isSupabaseConfigured() && (
+        <div className="mt-8">
+          <DataTable columns={columns} rows={rows} emptyMessage="Todavía no hay galerías." searchPlaceholder="Buscar galería..." />
         </div>
       )}
     </div>

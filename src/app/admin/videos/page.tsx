@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { YouTubeFacade } from "@/features/home/YouTubeFacade";
 import { VideoFeaturedToggleButton } from "@/features/admin/VideoFeaturedToggleButton";
 import { PlaylistVideoPicker } from "@/features/admin/PlaylistVideoPicker";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { extractYouTubeVideoId } from "@/lib/utils/youtube";
 import { getChannelPlaylistVideos } from "@/lib/content/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -25,6 +26,13 @@ async function getVideos(): Promise<Video[]> {
     .order("position", { ascending: true });
   return (data ?? []) as Video[];
 }
+
+const allVideosColumns: DataTableColumn[] = [
+  { id: "titulo", header: "Título", sortable: true },
+  { id: "origen", header: "Origen", sortable: true },
+  { id: "estado", header: "Estado", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
 
 export default async function AdminVideosPage() {
   const [videos, playlistVideos] = await Promise.all([getVideos(), getChannelPlaylistVideos()]);
@@ -98,45 +106,39 @@ export default async function AdminVideosPage() {
 
       <div className="mt-12">
         <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Todos los videos cargados</h2>
-        {videos.length === 0 ? (
-          <p className="mt-4 text-sm text-foreground/50">Todavía no hay videos cargados.</p>
-        ) : (
-          <div className="mt-4 overflow-x-auto rounded-sm border border-secondary/30">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Título</th>
-                  <th className="px-4 py-3 font-semibold">Origen</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-secondary/15">
-                {videos.map((video) => (
-                  <tr key={video.id} className="hover:bg-card/30">
-                    <td className="px-4 py-3 text-foreground">{video.title}</td>
-                    <td className="px-4 py-3 text-foreground/60">
-                      {video.source === "playlist" ? "Playlist" : "Manual"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={video.featured ? "primary" : "default"}>
-                        {video.featured ? "Destacado" : "No destacado"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/videos/${video.id}`}
-                        className="text-xs font-semibold uppercase text-primary hover:underline"
-                      >
-                        Editar
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="mt-4">
+          <DataTable
+            columns={allVideosColumns}
+            rows={videos.map((video) => {
+              const origin = video.source === "playlist" ? "Playlist" : "Manual";
+              return {
+                key: video.id,
+                filterText: `${video.title} ${origin}`,
+                sortValues: {
+                  titulo: video.title.toLowerCase(),
+                  origen: origin,
+                  estado: video.featured ? 1 : 0,
+                },
+                cells: {
+                  titulo: <span className="text-foreground">{video.title}</span>,
+                  origen: <span className="text-foreground/60">{origin}</span>,
+                  estado: (
+                    <Badge tone={video.featured ? "primary" : "default"}>
+                      {video.featured ? "Destacado" : "No destacado"}
+                    </Badge>
+                  ),
+                  acciones: (
+                    <Link href={`/admin/videos/${video.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+                      Editar
+                    </Link>
+                  ),
+                },
+              };
+            })}
+            emptyMessage="Todavía no hay videos cargados."
+            searchPlaceholder="Buscar video..."
+          />
+        </div>
       </div>
     </div>
   );

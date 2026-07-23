@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Order } from "@/types/database";
@@ -35,8 +36,51 @@ const statusTone: Record<string, "default" | "primary"> = {
   reembolsado: "default",
 };
 
+const columns: DataTableColumn[] = [
+  { id: "pedido", header: "Pedido", sortable: true },
+  { id: "cliente", header: "Cliente", sortable: true },
+  { id: "fecha", header: "Fecha", sortable: true },
+  { id: "total", header: "Total", sortable: true },
+  { id: "estado", header: "Estado", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
+
 export default async function AdminOrdersPage() {
   const orders = await getOrders();
+
+  const rows: DataTableRow[] = orders.map((order) => {
+    const customer = order.customer_snapshot as { full_name?: string; email?: string };
+    const status = statusLabel[order.status] ?? order.status;
+    const shortId = order.id.slice(0, 8).toUpperCase();
+    return {
+      key: order.id,
+      filterText: `${shortId} ${customer.full_name ?? ""} ${customer.email ?? ""} ${status}`,
+      sortValues: {
+        pedido: shortId,
+        cliente: (customer.full_name ?? "").toLowerCase(),
+        fecha: new Date(order.created_at).getTime(),
+        total: order.total,
+        estado: status,
+      },
+      cells: {
+        pedido: <span className="font-mono text-xs text-foreground/70">#{shortId}</span>,
+        cliente: (
+          <span className="text-foreground">
+            {customer.full_name ?? "—"}
+            <span className="block text-xs text-foreground/40">{customer.email ?? ""}</span>
+          </span>
+        ),
+        fecha: <span className="text-foreground/60">{formatDate(order.created_at)}</span>,
+        total: <span className="text-foreground/60">{formatCurrency(order.total, order.currency)}</span>,
+        estado: <Badge tone={statusTone[order.status] ?? "default"}>{status}</Badge>,
+        acciones: (
+          <Link href={`/admin/pedidos/${order.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+            Ver
+          </Link>
+        ),
+      },
+    };
+  });
 
   return (
     <div>
@@ -50,55 +94,9 @@ export default async function AdminOrdersPage() {
         </p>
       )}
 
-      {isSupabaseConfigured() && orders.length === 0 && (
-        <p className="mt-10 text-sm text-foreground/50">Todavía no hay pedidos.</p>
-      )}
-
-      {orders.length > 0 && (
-        <div className="mt-8 overflow-x-auto rounded-sm border border-secondary/30">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Pedido</th>
-                <th className="px-4 py-3 font-semibold">Cliente</th>
-                <th className="px-4 py-3 font-semibold">Fecha</th>
-                <th className="px-4 py-3 font-semibold">Total</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/15">
-              {orders.map((order) => {
-                const customer = order.customer_snapshot as { full_name?: string; email?: string };
-                return (
-                  <tr key={order.id} className="hover:bg-card/30">
-                    <td className="px-4 py-3 font-mono text-xs text-foreground/70">
-                      #{order.id.slice(0, 8).toUpperCase()}
-                    </td>
-                    <td className="px-4 py-3 text-foreground">
-                      {customer.full_name ?? "—"}
-                      <span className="block text-xs text-foreground/40">{customer.email ?? ""}</span>
-                    </td>
-                    <td className="px-4 py-3 text-foreground/60">{formatDate(order.created_at)}</td>
-                    <td className="px-4 py-3 text-foreground/60">{formatCurrency(order.total, order.currency)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={statusTone[order.status] ?? "default"}>
-                        {statusLabel[order.status] ?? order.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/pedidos/${order.id}`}
-                        className="text-xs font-semibold uppercase text-primary hover:underline"
-                      >
-                        Ver
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {isSupabaseConfigured() && (
+        <div className="mt-8">
+          <DataTable columns={columns} rows={rows} emptyMessage="Todavía no hay pedidos." searchPlaceholder="Buscar pedido o cliente..." />
         </div>
       )}
     </div>

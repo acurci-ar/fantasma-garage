@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Project } from "@/types/database";
 
@@ -24,8 +25,49 @@ async function getProjects(): Promise<Project[]> {
   return (data ?? []) as Project[];
 }
 
+const columns: DataTableColumn[] = [
+  { id: "vehiculo", header: "Vehículo", sortable: true },
+  { id: "etapa", header: "Etapa", sortable: true },
+  { id: "visibilidad", header: "Visibilidad", sortable: true },
+  { id: "publicado", header: "Publicado", sortable: true },
+  { id: "fotos", header: "Fotos", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
+
 export default async function AdminProjectsPage() {
   const projects = await getProjects();
+
+  const rows: DataTableRow[] = projects.map((project) => {
+    const status = statusLabel[project.status] ?? project.status;
+    const vehicle = `${project.make} ${project.model} · ${project.year}`;
+    return {
+      key: project.id,
+      filterText: `${vehicle} ${status} ${project.visibility}`,
+      sortValues: {
+        vehiculo: `${project.make} ${project.model}`.toLowerCase(),
+        etapa: status,
+        visibilidad: project.visibility,
+        publicado: project.featured ? 1 : 0,
+        fotos: project.images?.length ?? 0,
+      },
+      cells: {
+        vehiculo: <span className="text-foreground">{vehicle}</span>,
+        etapa: <span className="text-foreground/60">{status}</span>,
+        visibilidad: (
+          <Badge tone={project.visibility === "private" ? "default" : "primary"}>
+            {project.visibility === "private" ? "Privado" : "Público"}
+          </Badge>
+        ),
+        publicado: <Badge tone={project.featured ? "primary" : "default"}>{project.featured ? "Sí" : "No"}</Badge>,
+        fotos: <span className="text-foreground/60">{project.images?.length ?? 0}</span>,
+        acciones: (
+          <Link href={`/admin/proyectos/${project.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+            Editar
+          </Link>
+        ),
+      },
+    };
+  });
 
   return (
     <div>
@@ -43,47 +85,9 @@ export default async function AdminProjectsPage() {
         </p>
       )}
 
-      {isSupabaseConfigured() && projects.length === 0 && (
-        <p className="mt-10 text-sm text-foreground/50">Todavía no hay proyectos cargados.</p>
-      )}
-
-      {projects.length > 0 && (
-        <div className="mt-8 overflow-x-auto rounded-sm border border-secondary/30">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Vehículo</th>
-                <th className="px-4 py-3 font-semibold">Etapa</th>
-                <th className="px-4 py-3 font-semibold">Publicado</th>
-                <th className="px-4 py-3 font-semibold">Fotos</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/15">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-card/30">
-                  <td className="px-4 py-3 text-foreground">
-                    {project.make} {project.model} · {project.year}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/60">{statusLabel[project.status] ?? project.status}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={project.featured ? "primary" : "default"}>
-                      {project.featured ? "Sí" : "No"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-foreground/60">{project.images?.length ?? 0}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/proyectos/${project.id}`}
-                      className="text-xs font-semibold uppercase text-primary hover:underline"
-                    >
-                      Editar
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isSupabaseConfigured() && (
+        <div className="mt-8">
+          <DataTable columns={columns} rows={rows} emptyMessage="Todavía no hay proyectos cargados." searchPlaceholder="Buscar vehículo..." />
         </div>
       )}
     </div>

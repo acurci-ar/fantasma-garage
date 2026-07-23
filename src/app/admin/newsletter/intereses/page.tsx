@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { NewsletterSubNav } from "@/features/admin/NewsletterSubNav";
+import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { NewsletterInterestTag } from "@/types/database";
 
@@ -16,8 +17,38 @@ async function getInterests(): Promise<NewsletterInterestTag[]> {
   return (data ?? []) as NewsletterInterestTag[];
 }
 
+const columns: DataTableColumn[] = [
+  { id: "etiqueta", header: "Etiqueta", sortable: true },
+  { id: "slug", header: "Slug", sortable: true },
+  { id: "orden", header: "Orden", sortable: true },
+  { id: "estado", header: "Estado", sortable: true },
+  { id: "acciones", header: "", align: "right" },
+];
+
 export default async function AdminNewsletterInterestsPage() {
   const interests = await getInterests();
+
+  const rows: DataTableRow[] = interests.map((interest) => ({
+    key: interest.id,
+    filterText: `${interest.label} ${interest.slug}`,
+    sortValues: {
+      etiqueta: interest.label.toLowerCase(),
+      slug: interest.slug.toLowerCase(),
+      orden: interest.sort_order,
+      estado: interest.active ? 1 : 0,
+    },
+    cells: {
+      etiqueta: <span className="text-foreground">{interest.label}</span>,
+      slug: <span className="text-foreground/60">{interest.slug}</span>,
+      orden: <span className="text-foreground/60">{interest.sort_order}</span>,
+      estado: <Badge tone={interest.active ? "primary" : "default"}>{interest.active ? "Activo" : "Inactivo"}</Badge>,
+      acciones: (
+        <Link href={`/admin/newsletter/intereses/${interest.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
+          Editar
+        </Link>
+      ),
+    },
+  }));
 
   return (
     <div>
@@ -42,45 +73,9 @@ export default async function AdminNewsletterInterestsPage() {
         </p>
       )}
 
-      {isSupabaseConfigured() && interests.length === 0 && (
-        <p className="mt-10 text-sm text-foreground/50">Todavía no hay intereses cargados.</p>
-      )}
-
-      {interests.length > 0 && (
-        <div className="mt-8 overflow-x-auto rounded-sm border border-secondary/30">
-          <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="border-b border-secondary/30 bg-card/40 text-xs uppercase tracking-wide text-foreground/50">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Etiqueta</th>
-                <th className="px-4 py-3 font-semibold">Slug</th>
-                <th className="px-4 py-3 font-semibold">Orden</th>
-                <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-secondary/15">
-              {interests.map((interest) => (
-                <tr key={interest.id} className="hover:bg-card/30">
-                  <td className="px-4 py-3 text-foreground">{interest.label}</td>
-                  <td className="px-4 py-3 text-foreground/60">{interest.slug}</td>
-                  <td className="px-4 py-3 text-foreground/60">{interest.sort_order}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={interest.active ? "primary" : "default"}>
-                      {interest.active ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/newsletter/intereses/${interest.id}`}
-                      className="text-xs font-semibold uppercase text-primary hover:underline"
-                    >
-                      Editar
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {isSupabaseConfigured() && (
+        <div className="mt-8">
+          <DataTable columns={columns} rows={rows} emptyMessage="Todavía no hay intereses cargados." searchPlaceholder="Buscar interés..." />
         </div>
       )}
     </div>
