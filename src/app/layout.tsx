@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart/CartContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { NewsletterModalProvider } from "@/lib/newsletter/NewsletterModalContext";
 import { NewsletterModal } from "@/features/home/NewsletterModal";
+import { isCurrentUserNewsletterSubscriber } from "@/actions/newsletter";
 import { getServices, getSiteSettings } from "@/lib/content/queries";
 import type { Service, SiteSettings } from "@/types/database";
 
@@ -141,7 +142,11 @@ function buildLocalBusinessJsonLd(settings: SiteSettings, services: Service[]) {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [settings, services] = await Promise.all([getSiteSettings(), getServices()]);
+  const [settings, services, isNewsletterSubscriber] = await Promise.all([
+    getSiteSettings(),
+    getServices(),
+    isCurrentUserNewsletterSubscriber(),
+  ]);
   const jsonLd = buildLocalBusinessJsonLd(settings, services);
 
   return (
@@ -160,9 +165,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         <CartProvider>
           <NewsletterModalProvider>
-            <Navbar />
+            <Navbar hideNewsletterCta={isNewsletterSubscriber} />
             <main id="main-content">{children}</main>
-            <Footer settings={settings} />
+            <Footer settings={settings} hideNewsletterCta={isNewsletterSubscriber} />
             <CartDrawer />
             <NewsletterModal />
           </NewsletterModalProvider>

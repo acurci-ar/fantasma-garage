@@ -69,14 +69,20 @@ export default async function EditProjectPage({ params }: { params: { id: string
   const typedAccess = (access ?? []) as ProjectAccess[];
 
   // El bucket 'project-private' no tiene lectura pública: se genera una
-  // signed URL de corta duración por documento, solo para quien ya pasó
-  // project_documents_read (staff o acceso otorgado) al traer la fila.
+  // signed URL de corta duración por documento (y por su miniatura, si
+  // tiene), solo para quien ya pasó project_documents_read (staff o acceso
+  // otorgado) al traer la fila.
   const documentsWithUrls = await Promise.all(
     typedDocuments.map(async (doc) => ({
       doc,
       signedUrl: await getSignedFileUrl(supabase, "project-private", doc.file_path),
+      thumbnailSignedUrl: doc.thumbnail_path
+        ? await getSignedFileUrl(supabase, "project-private", doc.thumbnail_path)
+        : null,
     }))
   );
+  const expenseDescriptionById = new Map(typedExpenses.map((expense) => [expense.id, expense.description]));
+  const invoicesByExpense = documentsWithUrls.filter(({ doc }) => doc.expense_id);
 
   return (
     <div>
@@ -169,13 +175,20 @@ export default async function EditProjectPage({ params }: { params: { id: string
               </p>
               {documentsWithUrls.length > 0 && (
                 <div className="space-y-3">
-                  {documentsWithUrls.map(({ doc, signedUrl }) => (
-                    <ProjectDocumentRow key={doc.id} doc={doc} projectId={id} signedUrl={signedUrl} />
+                  {documentsWithUrls.map(({ doc, signedUrl, thumbnailSignedUrl }) => (
+                    <ProjectDocumentRow
+                      key={doc.id}
+                      doc={doc}
+                      projectId={id}
+                      signedUrl={signedUrl}
+                      thumbnailSignedUrl={thumbnailSignedUrl}
+                      linkedExpenseDescription={doc.expense_id ? expenseDescriptionById.get(doc.expense_id) : null}
+                    />
                   ))}
                 </div>
               )}
               {documentsWithUrls.length === 0 && <p className="text-xs text-foreground/40">Todavía no hay documentos.</p>}
-              <ProjectDocumentForm key={documentsWithUrls.length} projectId={id} />
+              <ProjectDocumentForm key={documentsWithUrls.length} projectId={id} expenses={typedExpenses} />
             </div>
           }
           timeline={
@@ -203,7 +216,7 @@ export default async function EditProjectPage({ params }: { params: { id: string
               <section>
                 <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Gastos y extras</h2>
                 <div className="mt-4">
-                  <ProjectExpenseManager projectId={id} expenses={typedExpenses} />
+                  <ProjectExpenseManager projectId={id} expenses={typedExpenses} invoices={invoicesByExpense} />
                 </div>
               </section>
             </div>

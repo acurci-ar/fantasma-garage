@@ -268,6 +268,11 @@ export interface ProjectDocument {
   name: string;
   /** Path del objeto en el bucket privado 'project-private', no una URL pública. Se resuelve a signed URL en el server (ver actions/admin/projects.ts). */
   file_path: string;
+  /** Gasto/extra al que está asociado este documento (ej. la factura de un repuesto), si corresponde. */
+  expense_id: UUID | null;
+  /** Path de una miniatura (mismo bucket privado), solo si el archivo original es una imagen. */
+  thumbnail_path: string | null;
+  mime_type: string | null;
   uploaded_by: UUID | null;
   created_at: ISODateString;
 }
@@ -374,6 +379,8 @@ export interface ContactMessage {
   subject: string;
   message: string;
   status: ContactMessageStatus;
+  /** Cuándo lo abrió el staff por primera vez; null = todavía no leído. */
+  read_at: ISODateString | null;
   created_at: ISODateString;
 }
 

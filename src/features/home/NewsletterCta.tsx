@@ -6,7 +6,9 @@ import { NewsletterCtaButton } from "@/features/home/NewsletterCtaButton";
  * largo embebido acá (que solo ve quien scrollea hasta esta sección), el
  * botón abre el mismo modal accesible también desde la navbar y el footer.
  */
-export function NewsletterCta() {
+export function NewsletterCta({ hideNewsletterCta = false }: { hideNewsletterCta?: boolean }) {
+  if (hideNewsletterCta) return null;
+
   return (
     <Section className="border-y border-secondary/20 bg-card/20">
       <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">

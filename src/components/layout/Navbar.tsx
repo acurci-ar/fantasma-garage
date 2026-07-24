@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-export function Navbar() {
+export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
@@ -121,24 +121,26 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={openNewsletter}
-            className="hidden h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground transition-colors duration-220 hover:border-primary hover:text-primary sm:inline-flex"
-            aria-label="Suscribirme al newsletter"
-            title="Suscribirme al newsletter"
-          >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <rect x="2.5" y="4.5" width="15" height="11" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
-              <path
-                d="M3 5.5l7 5.5 7-5.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
+          {!hideNewsletterCta && (
+            <button
+              type="button"
+              onClick={openNewsletter}
+              className="hidden h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground transition-colors duration-220 hover:border-primary hover:text-primary sm:inline-flex"
+              aria-label="Suscribirme al newsletter"
+              title="Suscribirme al newsletter"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <rect x="2.5" y="4.5" width="15" height="11" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+                <path
+                  d="M3 5.5l7 5.5 7-5.5"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
           <button
             type="button"
             onClick={openCart}
@@ -211,16 +213,18 @@ export function Navbar() {
           >
             {isLoggedIn ? "Mi cuenta" : "Ingresar"}
           </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setDrawerOpen(false);
-              openNewsletter();
-            }}
-            className="flex min-h-[44px] items-center text-base font-medium uppercase tracking-wide text-foreground/85 hover:text-primary"
-          >
-            Suscribirme al newsletter
-          </button>
+          {!hideNewsletterCta && (
+            <button
+              type="button"
+              onClick={() => {
+                setDrawerOpen(false);
+                openNewsletter();
+              }}
+              className="flex min-h-[44px] items-center text-base font-medium uppercase tracking-wide text-foreground/85 hover:text-primary"
+            >
+              Suscribirme al newsletter
+            </button>
+          )}
         </nav>
       </div>
     </header>

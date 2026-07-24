@@ -15,7 +15,7 @@ import {
   projectTimeEntrySchema,
 } from "@/lib/validation/admin/project";
 import { createClient } from "@/lib/supabase/server";
-import { uploadImageToBucket, uploadFileToBucket, uploadPrivateFile } from "@/lib/supabase/upload";
+import { uploadImageToBucket, uploadFileToBucket, uploadPrivateDocument } from "@/lib/supabase/upload";
 import type { BulkUploadActionState } from "@/lib/validation/admin/bulkUpload";
 
 export interface ProjectActionState {
@@ -721,7 +721,10 @@ export async function addProjectDocument(
   _prevState: ProjectDocumentActionState,
   formData: FormData
 ): Promise<ProjectDocumentActionState> {
-  const parsed = projectDocumentSchema.safeParse({ name: String(formData.get("name") ?? "") });
+  const parsed = projectDocumentSchema.safeParse({
+    name: String(formData.get("name") ?? ""),
+    expense_id: String(formData.get("expense_id") ?? ""),
+  });
   if (!parsed.success) {
     return { status: "error", message: "Ingresá un nombre.", fieldErrors: parsed.error.flatten().fieldErrors };
   }
@@ -740,13 +743,16 @@ export async function addProjectDocument(
   }
 
   const supabase = await createClient();
-  const uploaded = await uploadPrivateFile(supabase, file, "project-private", projectId);
+  const uploaded = await uploadPrivateDocument(supabase, file, "project-private", projectId);
   if ("error" in uploaded) return { status: "error", message: uploaded.error };
 
   const { error } = await supabase.from("project_documents").insert({
     project_id: projectId,
     name: parsed.data.name,
     file_path: uploaded.path,
+    thumbnail_path: uploaded.thumbnailPath,
+    mime_type: uploaded.mimeType,
+    expense_id: parsed.data.expense_id || null,
   });
 
   if (error) {
@@ -763,15 +769,20 @@ export async function deleteProjectDocument(
 ): Promise<{ status: "success" | "error"; message: string }> {
   const supabase = await createClient();
 
-  const { data: doc } = await supabase.from("project_documents").select("file_path").eq("id", id).maybeSingle();
+  const { data: doc } = await supabase
+    .from("project_documents")
+    .select("file_path, thumbnail_path")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("project_documents").delete().eq("id", id);
 
   if (error) {
     return { status: "error", message: "No pudimos eliminar el documento." };
   }
 
-  if (doc?.file_path) {
-    await supabase.storage.from("project-private").remove([doc.file_path]);
+  if (doc) {
+    const paths = [doc.file_path, doc.thumbnail_path].filter((p): p is string => Boolean(p));
+    if (paths.length > 0) await supabase.storage.from("project-private").remove(paths);
   }
 
   revalidatePath(`/admin/proyectos/${projectId}`);
@@ -840,10 +851,45 @@ export async function addProjectExpense(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("project_expenses").insert({ project_id: projectId, ...parsed.data });
+  const { data: inserted, error } = await supabase
+    .from("project_expenses")
+    .insert({ project_id: projectId, ...parsed.data })
+    .select("id")
+    .single();
 
-  if (error) {
+  if (error || !inserted) {
     return { status: "error", message: "No pudimos guardar el gasto." };
+  }
+
+  // Factura/comprobante opcional: si se adjuntó un archivo, se guarda como
+  // un project_document más (visible también en la solapa Documentos),
+  // vinculado a este gasto vía expense_id. Si falla la subida no se
+  // deshace el gasto — ya quedó guardado — solo se avisa en el mensaje.
+  const invoiceFile = formData.get("invoice");
+  if (invoiceFile instanceof File && invoiceFile.size > 0) {
+    const { exceedsDocumentLimit, MAX_DOCUMENT_BYTES } = await import("@/lib/utils/file");
+    if (exceedsDocumentLimit(invoiceFile.size)) {
+      revalidatePath(`/admin/proyectos/${projectId}`);
+      return {
+        status: "success",
+        message: `Gasto guardado, pero la factura pesa más de ${Math.round(MAX_DOCUMENT_BYTES / (1024 * 1024))}MB y no se pudo adjuntar.`,
+      };
+    }
+
+    const uploaded = await uploadPrivateDocument(supabase, invoiceFile, "project-private", projectId);
+    if ("error" in uploaded) {
+      revalidatePath(`/admin/proyectos/${projectId}`);
+      return { status: "success", message: `Gasto guardado, pero no pudimos adjuntar la factura: ${uploaded.error}` };
+    }
+
+    await supabase.from("project_documents").insert({
+      project_id: projectId,
+      name: `Factura: ${parsed.data.description}`,
+      file_path: uploaded.path,
+      thumbnail_path: uploaded.thumbnailPath,
+      mime_type: uploaded.mimeType,
+      expense_id: inserted.id,
+    });
   }
 
   revalidatePath(`/admin/proyectos/${projectId}`);

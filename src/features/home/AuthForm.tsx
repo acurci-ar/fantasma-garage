@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { getActiveNewsletterInterests } from "@/actions/newsletter";
+import type { NewsletterInterestTag } from "@/types/database";
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -18,6 +20,16 @@ interface AuthFormProps {
 export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [interests, setInterests] = useState<NewsletterInterestTag[]>([]);
+
+  // Al registrarse, se le ofrece elegir sus áreas de interés: se guardan
+  // como metadata del alta y el trigger handle_new_user() (ver
+  // 0015_signup_newsletter.sql) da de alta al newsletter con ellas apenas
+  // se crea el usuario, sin que tenga que suscribirse aparte.
+  useEffect(() => {
+    if (mode !== "register") return;
+    getActiveNewsletterInterests().then(setInterests);
+  }, [mode]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,6 +50,7 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
     const form = new FormData(e.currentTarget);
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
+    const newsletterInterests = form.getAll("interests").map(String);
 
     try {
       const { createClient } = await import("@/lib/supabase/client");
@@ -64,6 +77,10 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
               // deslogueado. next=redirectTo es a dónde va una vez logueado.
               options: {
                 emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+                // Se leen en el trigger handle_new_user() (SQL) para dar de
+                // alta al newsletter con estos intereses apenas se crea el
+                // usuario — ver 0015_signup_newsletter.sql.
+                data: { newsletter_interests: newsletterInterests },
               },
             });
 
@@ -85,8 +102,8 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
       setStatus("success");
       setMessage(
         redirectTo === "/cuenta"
-          ? "Cuenta creada. Revisá tu email para confirmar el registro."
-          : "Cuenta creada. Revisá tu email para confirmar el registro y después iniciá sesión de nuevo para continuar tu pedido."
+          ? "Cuenta creada y suscripta a las novedades. Revisá tu email para confirmar el registro."
+          : "Cuenta creada y suscripta a las novedades. Revisá tu email para confirmar el registro y después iniciá sesión de nuevo para continuar tu pedido."
       );
     } catch (error) {
       setStatus("error");
@@ -115,6 +132,30 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
+      )}
+
+      {mode === "register" && interests.length > 0 && (
+        <fieldset>
+          <legend className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
+            Áreas de interés (opcional)
+          </legend>
+          <p className="mb-3 text-xs text-foreground/40">
+            Te suscribimos a las novedades con estos temas — podés cambiarlos cuando quieras.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {interests.map((interest) => (
+              <label key={interest.id} className="flex items-center gap-2 text-sm text-foreground/70">
+                <input
+                  type="checkbox"
+                  name="interests"
+                  value={interest.slug}
+                  className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
+                />
+                {interest.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
       )}
 
       <Button type="submit" loading={status === "loading"} className="w-full">

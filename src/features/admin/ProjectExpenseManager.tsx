@@ -4,10 +4,17 @@ import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { DocumentThumb } from "@/components/ui/DocumentThumb";
 import { addProjectExpense, deleteProjectExpense } from "@/actions/admin/projects";
 import type { ProjectExpenseActionState } from "@/actions/admin/projects";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
-import type { ProjectExpense } from "@/types/database";
+import type { ProjectDocument, ProjectExpense } from "@/types/database";
+
+export interface ExpenseInvoice {
+  doc: ProjectDocument;
+  signedUrl: string | null;
+  thumbnailSignedUrl: string | null;
+}
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -25,7 +32,15 @@ function SubmitButton() {
   );
 }
 
-function ExpenseRow({ expense, projectId }: { expense: ProjectExpense; projectId: string }) {
+function ExpenseRow({
+  expense,
+  projectId,
+  invoice,
+}: {
+  expense: ProjectExpense;
+  projectId: string;
+  invoice?: ExpenseInvoice;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -40,21 +55,34 @@ function ExpenseRow({ expense, projectId }: { expense: ProjectExpense; projectId
 
   return (
     <div className="flex items-center justify-between gap-4 rounded-sm border border-secondary/30 bg-card/40 px-4 py-3 text-sm">
-      <div>
-        <p className="text-foreground/90">
-          {expense.description}{" "}
-          <span
-            className={`ml-1 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-              expense.kind === "extra" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-foreground/60"
-            }`}
-          >
-            {expense.kind === "extra" ? "Extra" : "Gasto"}
-          </span>
-        </p>
-        <p className="text-xs text-foreground/40">
-          {formatDate(expense.expense_date)}
-          {expense.category ? ` · ${expense.category}` : ""}
-        </p>
+      <div className="flex min-w-0 items-center gap-3">
+        {invoice && <DocumentThumb name={invoice.doc.name} mimeType={invoice.doc.mime_type} thumbnailUrl={invoice.thumbnailSignedUrl} size="sm" />}
+        <div className="min-w-0">
+          <p className="text-foreground/90">
+            {expense.description}{" "}
+            <span
+              className={`ml-1 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                expense.kind === "extra" ? "bg-primary/20 text-primary" : "bg-secondary/20 text-foreground/60"
+              }`}
+            >
+              {expense.kind === "extra" ? "Extra" : "Gasto"}
+            </span>
+          </p>
+          <p className="text-xs text-foreground/40">
+            {formatDate(expense.expense_date)}
+            {expense.category ? ` · ${expense.category}` : ""}
+          </p>
+          {invoice?.signedUrl && (
+            <a
+              href={invoice.signedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block text-xs text-primary hover:underline"
+            >
+              Ver factura
+            </a>
+          )}
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-4">
         <span className="font-semibold text-foreground">{formatCurrency(expense.amount, expense.currency)}</span>
@@ -72,7 +100,15 @@ function ExpenseRow({ expense, projectId }: { expense: ProjectExpense; projectId
 }
 
 /** Gastos operativos y extras (costos no previstos en el presupuesto inicial) del proyecto. Siempre privado. */
-export function ProjectExpenseManager({ projectId, expenses }: { projectId: string; expenses: ProjectExpense[] }) {
+export function ProjectExpenseManager({
+  projectId,
+  expenses,
+  invoices = [],
+}: {
+  projectId: string;
+  expenses: ProjectExpense[];
+  invoices?: ExpenseInvoice[];
+}) {
   const [state, formAction] = useFormState(addProjectExpense.bind(null, projectId), initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -89,6 +125,7 @@ export function ProjectExpenseManager({ projectId, expenses }: { projectId: stri
     acc[e.currency] = (acc[e.currency] ?? 0) + e.amount;
     return acc;
   }, {});
+  const invoiceByExpenseId = new Map(invoices.map((invoice) => [invoice.doc.expense_id, invoice]));
 
   return (
     <div className="space-y-4">
@@ -102,7 +139,7 @@ export function ProjectExpenseManager({ projectId, expenses }: { projectId: stri
       )}
 
       {sorted.map((expense) => (
-        <ExpenseRow key={expense.id} expense={expense} projectId={projectId} />
+        <ExpenseRow key={expense.id} expense={expense} projectId={projectId} invoice={invoiceByExpenseId.get(expense.id)} />
       ))}
       {sorted.length === 0 && <p className="text-xs text-foreground/40">Todavía no hay gastos cargados.</p>}
 
@@ -140,6 +177,18 @@ export function ProjectExpenseManager({ projectId, expenses }: { projectId: stri
         <div>
           <label className={labelClasses}>Categoría (opcional)</label>
           <input name="category" type="text" placeholder="Repuestos, mano de obra..." className={inputClasses} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className={labelClasses}>Factura/comprobante (opcional, máx. 4MB)</label>
+          <input
+            name="invoice"
+            type="file"
+            className="block w-full text-sm text-foreground/70 file:mr-4 file:rounded-sm file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-background hover:file:bg-primary/90"
+          />
+          <p className="mt-2 text-xs text-foreground/40">
+            Se guarda también en la solapa Documentos, vinculada a este gasto. Si es una foto, se muestra una
+            miniatura.
+          </p>
         </div>
         <div className="sm:col-span-2 flex items-center gap-4">
           <SubmitButton />

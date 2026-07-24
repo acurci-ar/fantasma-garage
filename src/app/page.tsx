@@ -16,17 +16,20 @@ import {
   getSiteSettings,
 } from "@/lib/content/queries";
 import { getLoggedInProfile } from "@/lib/account/getLoggedInProfile";
+import { isCurrentUserNewsletterSubscriber } from "@/actions/newsletter";
 
 export default async function HomePage() {
-  const [settings, services, projects, galleries, videos, products, loggedIn] = await Promise.all([
-    getSiteSettings(),
-    getServices(),
-    getFeaturedProjects(),
-    getGalleries(),
-    getFeaturedVideos(),
-    getFeaturedProducts(),
-    getLoggedInProfile(),
-  ]);
+  const [settings, services, projects, galleries, videos, products, loggedIn, isNewsletterSubscriber] =
+    await Promise.all([
+      getSiteSettings(),
+      getServices(),
+      getFeaturedProjects(),
+      getGalleries(),
+      getFeaturedVideos(),
+      getFeaturedProducts(),
+      getLoggedInProfile(),
+      isCurrentUserNewsletterSubscriber(),
+    ]);
   const contactInitialValues = loggedIn
     ? { name: loggedIn.profile?.full_name ?? "", email: loggedIn.email, phone: loggedIn.profile?.phone ?? "" }
     : undefined;
@@ -40,7 +43,7 @@ export default async function HomePage() {
       <GalleriesShowcase galleries={galleries} />
       <WorkshopVideos videos={videos} settings={settings} />
       <FeaturedShop products={products} />
-      <NewsletterCta />
+      <NewsletterCta hideNewsletterCta={isNewsletterSubscriber} />
       <ContactSection settings={settings} initialValues={contactInitialValues} />
     </>
   );

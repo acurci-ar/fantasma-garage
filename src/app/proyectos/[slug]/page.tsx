@@ -50,7 +50,7 @@ export default async function ProjectPage({ params }: { params: { slug: string }
   // particular (RLS project_access_select_own ya limita esto a sus propios
   // accesos, así que alcanza con filtrar por project_id acá).
   let hasFullAccess = false;
-  let documentsWithUrls: { doc: ProjectDocument; signedUrl: string | null }[] = [];
+  let documentsWithUrls: { doc: ProjectDocument; signedUrl: string | null; thumbnailSignedUrl: string | null }[] = [];
   let budget: ProjectBudget | null = null;
   let expenses: ProjectExpense[] = [];
   let timeEntries: ProjectTimeEntry[] = [];
@@ -90,12 +90,17 @@ export default async function ProjectPage({ params }: { params: { slug: string }
       typedDocuments.map(async (doc) => ({
         doc,
         signedUrl: await getSignedFileUrl(supabase, "project-private", doc.file_path),
+        thumbnailSignedUrl: doc.thumbnail_path
+          ? await getSignedFileUrl(supabase, "project-private", doc.thumbnail_path)
+          : null,
       }))
     );
     budget = budgetRow as ProjectBudget | null;
     expenses = (expenseRows ?? []) as ProjectExpense[];
     timeEntries = (timeRows ?? []) as ProjectTimeEntry[];
   }
+
+  const invoicesByExpense = documentsWithUrls.filter(({ doc }) => doc.expense_id);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -198,7 +203,7 @@ export default async function ProjectPage({ params }: { params: { slug: string }
                 {
                   key: "presupuesto",
                   label: "Presupuesto",
-                  content: <ProjectBudgetReadOnly budget={budget} expenses={expenses} />,
+                  content: <ProjectBudgetReadOnly budget={budget} expenses={expenses} invoices={invoicesByExpense} />,
                 },
                 { key: "horas", label: "Horas", content: <ProjectHoursReadOnly entries={timeEntries} /> },
               ]}

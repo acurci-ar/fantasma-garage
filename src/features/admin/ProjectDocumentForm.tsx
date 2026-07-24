@@ -6,6 +6,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { addProjectDocument } from "@/actions/admin/projects";
 import type { ProjectDocumentActionState } from "@/actions/admin/projects";
+import type { ProjectExpense } from "@/types/database";
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -24,7 +25,7 @@ function SubmitButton() {
 }
 
 /** Alta de documentación (siempre privada — ver project_documents_read en 0012_project_tracking.sql). */
-export function ProjectDocumentForm({ projectId }: { projectId: string }) {
+export function ProjectDocumentForm({ projectId, expenses = [] }: { projectId: string; expenses?: ProjectExpense[] }) {
   const [state, formAction] = useFormState(addProjectDocument.bind(null, projectId), initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -52,9 +53,23 @@ export function ProjectDocumentForm({ projectId }: { projectId: string }) {
           className="block w-full text-sm text-foreground/70 file:mr-4 file:rounded-sm file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-background hover:file:bg-primary/90"
         />
         <p className="mt-2 text-xs text-foreground/40">
-          Si pesa más de 4MB, subilo a un hosting propio (Drive, etc.) y compartí el link por otro medio.
+          Si pesa más de 4MB, subilo a un hosting propio (Drive, etc.) y compartí el link por otro medio. Si es una
+          imagen (ej. foto de una factura), se genera automáticamente una miniatura.
         </p>
       </div>
+      {expenses.length > 0 && (
+        <div>
+          <label className={labelClasses}>Vincular a un gasto/extra (opcional)</label>
+          <select name="expense_id" defaultValue="" className={inputClasses}>
+            <option value="">Ninguno</option>
+            {expenses.map((expense) => (
+              <option key={expense.id} value={expense.id}>
+                {expense.description}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton />
         {state.status !== "idle" && (

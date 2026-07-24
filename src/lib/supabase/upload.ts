@@ -147,6 +147,64 @@ export async function uploadPrivateFile(
   return { path };
 }
 
+/** Ancho de la miniatura de un documento (ej. foto de una factura), bastante más chica que la de fotos de galería porque acá solo se usa como ícono/preview en una lista. */
+const DOCUMENT_THUMB_WIDTH_PX = 320;
+
+export interface UploadedPrivateDocument {
+  path: string;
+  /** null si el archivo no es una imagen, o si por algún motivo no se pudo generar la miniatura (no es un error fatal: el documento se sube igual). */
+  thumbnailPath: string | null;
+  mimeType: string | null;
+}
+
+/**
+ * Sube un documento a un bucket PRIVADO (ej. 'project-private') y, si es una
+ * imagen (la mayoría van a ser fotos de facturas), genera además una
+ * miniatura liviana en WebP para mostrar como preview en la solapa
+ * Documentos y en cada fila de Gastos — sin tener que bajar el archivo
+ * original entero. Si no es imagen (PDF, Word, etc.) el front cae a un
+ * ícono genérico según `mimeType`, no requiere miniatura.
+ *
+ * Igual que uploadPrivateFile: devuelve paths, no URLs públicas, porque el
+ * bucket no tiene lectura pública (ver getSignedFileUrl).
+ */
+export async function uploadPrivateDocument(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  file: File,
+  bucket: string,
+  folder: string
+): Promise<UploadedPrivateDocument | { error: string }> {
+  const path = `${folder}/${Date.now()}-${sanitizeFilename(file.name)}`;
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(path, buffer, { upsert: true, contentType: file.type || undefined });
+  if (error) return { error: "No pudimos subir el archivo. Probá de nuevo." };
+
+  let thumbnailPath: string | null = null;
+  if (file.type.startsWith("image/")) {
+    try {
+      const thumbBuffer = await sharp(buffer, { failOn: "none" })
+        .rotate()
+        .resize({ width: DOCUMENT_THUMB_WIDTH_PX, withoutEnlargement: true })
+        .webp({ quality: 70 })
+        .toBuffer();
+      const candidateThumbPath = `${folder}/${Date.now()}-thumb-${sanitizeFilename(file.name)}.webp`;
+      const { error: thumbError } = await supabase.storage
+        .from(bucket)
+        .upload(candidateThumbPath, thumbBuffer, { upsert: true, contentType: "image/webp" });
+      if (!thumbError) thumbnailPath = candidateThumbPath;
+    } catch {
+      // La miniatura es una optimización visual, no algo crítico: si sharp
+      // no pudo procesar la imagen, el documento se guarda igual sin ella.
+    }
+  }
+
+  return { path, thumbnailPath, mimeType: file.type || null };
+}
+
 /** Signed URL de corta duración para servir un archivo de un bucket privado. Null si el objeto no existe o algo falla. */
 export async function getSignedFileUrl(
   supabase: Awaited<ReturnType<typeof createClient>>,

@@ -35,6 +35,14 @@ export default async function AdminMessageDetailPage({ params }: { params: { id:
   const typedMessage = message as ContactMessage;
   const typedReplies = (replies ?? []) as ContactMessageReply[];
 
+  // Se marca como leído la primera vez que el staff abre el detalle — ver
+  // el contador de no leídos por solapa en /admin/mensajes.
+  if (!typedMessage.read_at) {
+    const readAt = new Date().toISOString();
+    await supabase.from("contact_messages").update({ read_at: readAt }).eq("id", id);
+    typedMessage.read_at = readAt;
+  }
+
   return (
     <div>
       <Link href="/admin/mensajes" className="text-xs font-semibold uppercase tracking-wide text-foreground/50 hover:text-primary">

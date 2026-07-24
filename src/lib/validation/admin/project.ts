@@ -125,6 +125,8 @@ export type ProjectVideoFormValues = z.infer<typeof projectVideoSchema>;
 
 export const projectDocumentSchema = z.object({
   name: z.string().trim().min(1, "Ingresá un nombre para el documento.").max(160),
+  // "" = sin vincular a ningún gasto/extra.
+  expense_id: z.string().trim().max(80),
 });
 
 export type ProjectDocumentFormValues = z.infer<typeof projectDocumentSchema>;

@@ -104,3 +104,36 @@ export async function subscribeNewsletter(
     return { status: "error", message: "No pudimos guardar tu suscripción. Probá de nuevo." };
   }
 }
+
+/**
+ * ¿Hay sesión iniciada y ese email ya está suscripto (activo) al
+ * newsletter? Se usa para no mostrarle los banners "Suscribite a las
+ * novedades" (Navbar, Footer, home) a alguien que ya está adentro — desde
+ * Server Components se puede llamar directo; desde un Client Component
+ * (Navbar, que detecta la sesión en el browser) funciona igual como RPC.
+ *
+ * No hace falta pasar el email: lo toma de la sesión, así ningún cliente
+ * puede consultar el estado de suscripción de otra persona. La RLS
+ * `newsletter_select_own` (auth.uid() = user_id) ya lo garantiza igual del
+ * lado de la base, pero conviene no depender solo de eso.
+ */
+export async function isCurrentUserNewsletterSubscriber(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) return false;
+
+  const { data } = await supabase
+    .from("newsletter_subscribers")
+    .select("id")
+    .eq("email", user.email)
+    .eq("status", "activo")
+    .maybeSingle();
+
+  return Boolean(data);
+}

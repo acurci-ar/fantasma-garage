@@ -13,22 +13,31 @@ const SECONDARY_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-export function Footer({ settings }: { settings: SiteSettings }) {
+export function Footer({
+  settings,
+  hideNewsletterCta = false,
+}: {
+  settings: SiteSettings;
+  /** True si quien está mirando la página ya está suscripto al newsletter (ver isCurrentUserNewsletterSubscriber). */
+  hideNewsletterCta?: boolean;
+}) {
   return (
     <footer className="border-t border-secondary/30 bg-background">
-      <div className="border-b border-secondary/20 bg-card/20">
-        <Container className="flex flex-wrap items-center justify-between gap-6 py-10">
-          <div>
-            <h3 className="font-display text-lg uppercase tracking-wide text-foreground">
-              Recibí novedades
-            </h3>
-            <p className="mt-2 max-w-sm text-sm text-foreground/60">
-              Enterate de restauraciones terminadas, juntadas y eventos antes que nadie.
-            </p>
-          </div>
-          <NewsletterCtaButton>Quiero recibir novedades</NewsletterCtaButton>
-        </Container>
-      </div>
+      {!hideNewsletterCta && (
+        <div className="border-b border-secondary/20 bg-card/20">
+          <Container className="flex flex-wrap items-center justify-between gap-6 py-10">
+            <div>
+              <h3 className="font-display text-lg uppercase tracking-wide text-foreground">
+                Recibí novedades
+              </h3>
+              <p className="mt-2 max-w-sm text-sm text-foreground/60">
+                Enterate de restauraciones terminadas, juntadas y eventos antes que nadie.
+              </p>
+            </div>
+            <NewsletterCtaButton>Quiero recibir novedades</NewsletterCtaButton>
+          </Container>
+        </div>
+      )}
 
       <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
