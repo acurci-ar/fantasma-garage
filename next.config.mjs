@@ -18,6 +18,15 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "4.5mb",
     },
+    // @napi-rs/canvas trae un binario nativo (.node) por plataforma. Si
+    // webpack intenta empaquetarlo (incluso detrás de un `import()` dinámico
+    // con literal, como en renderPdfFirstPageToPng) falla al no saber
+    // parsear ese archivo ("Module parse failed: Unexpected character").
+    // Al marcarlo (junto con pdfjs-dist) como paquete externo, Next lo deja
+    // afuera del bundle y lo resuelve con require() de Node en runtime, que
+    // sí sabe cargar binarios nativos — el file tracer de Vercel igual lo
+    // detecta y lo suma a la función serverless.
+    serverComponentsExternalPackages: ["@napi-rs/canvas", "pdfjs-dist"],
     // La miniatura de PDF (uploadPrivateDocument, lib/supabase/upload.ts)
     // usa pdfjs-dist, que además de código lee archivos de fuentes propios
     // en tiempo de ejecución (standard_fonts/*) con un path armado a mano
