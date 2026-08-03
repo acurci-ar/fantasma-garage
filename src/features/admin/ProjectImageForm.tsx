@@ -68,24 +68,23 @@ export function ProjectImageForm({
         <input name="alt" type="text" defaultValue={image?.alt ?? ""} className={inputClasses} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClasses}>Hito de la línea de tiempo (opcional)</label>
-          <select name="stage_id" defaultValue={image?.stage_id ?? ""} className={inputClasses}>
-            <option value="">Sin asociar</option>
-            {stages.map((stage) => (
-              <option key={stage.id} value={stage.id}>
-                {stage.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelClasses}>Orden</label>
-          <input name="position" type="number" min={0} defaultValue={image?.position ?? 0} className={inputClasses} />
-        </div>
+      <div>
+        <label className={labelClasses}>Hito de la línea de tiempo (opcional)</label>
+        <select name="stage_id" defaultValue={image?.stage_id ?? ""} className={inputClasses}>
+          <option value="">Sin asociar</option>
+          {stages.map((stage) => (
+            <option key={stage.id} value={stage.id}>
+              {stage.name}
+            </option>
+          ))}
+        </select>
       </div>
 
+      {/* El orden ya no se edita acá: se arrastra directamente en la lista
+          (ver ProjectImageManager). En modo edición hay que mandar el
+          position actual sin cambios para no perderlo; en modo alta se
+          omite y el server lo calcula al final de la lista. */}
+      {image && <input type="hidden" name="position" defaultValue={image.position} />}
       <input type="hidden" name="stage" defaultValue={image?.stage ?? ""} />
 
       <div>

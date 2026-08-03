@@ -18,6 +18,19 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "4.5mb",
     },
+    // La miniatura de PDF (uploadPrivateDocument, lib/supabase/upload.ts)
+    // usa pdfjs-dist, que además de código lee archivos de fuentes propios
+    // en tiempo de ejecución (standard_fonts/*) con un path armado a mano
+    // (process.cwd()) — el file tracer de Vercel no los detecta solo
+    // siguiendo imports estáticos, así que hay que pedírselo explícito o la
+    // función serverless queda sin esos archivos en producción.
+    outputFileTracingIncludes: {
+      "/admin/**": [
+        "./node_modules/pdfjs-dist/standard_fonts/**",
+        "./node_modules/pdfjs-dist/cmaps/**",
+        "./node_modules/@napi-rs/canvas-linux-x64-gnu/**",
+      ],
+    },
   },
   async redirects() {
     return [];

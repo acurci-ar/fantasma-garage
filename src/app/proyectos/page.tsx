@@ -4,7 +4,7 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { EditorialCard } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { getFeaturedProjects } from "@/lib/content/queries";
+import { getVisibleProjects } from "@/lib/content/queries";
 
 export const metadata: Metadata = {
   title: "Proyectos",
@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function ProyectosPage() {
-  const projects = await getFeaturedProjects();
+  const projects = await getVisibleProjects();
 
   return (
     <Section className="pt-32">

@@ -5,7 +5,7 @@ import { DeleteProjectButton } from "@/features/admin/DeleteProjectButton";
 import { ProjectTabs } from "@/features/admin/ProjectTabs";
 import { ProjectAccessManager } from "@/features/admin/ProjectAccessManager";
 import { ProjectImageForm } from "@/features/admin/ProjectImageForm";
-import { ProjectImageRow } from "@/features/admin/ProjectImageRow";
+import { ProjectImageManager } from "@/features/admin/ProjectImageManager";
 import { ProjectVideoForm } from "@/features/admin/ProjectVideoForm";
 import { ProjectVideoRow } from "@/features/admin/ProjectVideoRow";
 import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
@@ -108,15 +108,14 @@ export default async function EditProjectPage({ params }: { params: { id: string
                   Fotos del proyecto ({images.length})
                 </h2>
                 <p className="mt-2 text-xs text-foreground/40">
-                  Se muestran en la ficha pública del proyecto, ordenadas por &quot;orden&quot;. Marcá &quot;antes&quot;/&quot;después&quot; para
-                  las fotos de comparación, y asociá cada una a un hito si corresponde.
+                  Se muestran en la ficha pública del proyecto en este mismo orden — arrastrá desde el ícono de
+                  agarre para reordenarlas. Marcá &quot;antes&quot;/&quot;después&quot; para las fotos de comparación, y asociá cada
+                  una a un hito si corresponde.
                 </p>
 
                 {images.length > 0 && (
-                  <div className="mt-4 space-y-4">
-                    {images.map((image) => (
-                      <ProjectImageRow key={image.id} image={image} projectId={id} stages={typedStages} />
-                    ))}
+                  <div className="mt-4">
+                    <ProjectImageManager images={images} projectId={id} stages={typedStages} />
                   </div>
                 )}
 

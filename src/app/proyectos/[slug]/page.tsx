@@ -10,11 +10,11 @@ import { ProjectDocumentsReadOnly } from "@/features/project/ProjectDocumentsRea
 import { ProjectBudgetReadOnly } from "@/features/project/ProjectBudgetReadOnly";
 import { ProjectHoursReadOnly } from "@/features/project/ProjectHoursReadOnly";
 import { getSignedFileUrl } from "@/lib/supabase/upload";
-import { getFeaturedProjects, getProjectBySlug } from "@/lib/content/queries";
+import { getVisibleProjects, getProjectBySlug } from "@/lib/content/queries";
 import type { ProjectBudget, ProjectDocument, ProjectExpense, ProjectTimeEntry } from "@/types/database";
 
 export async function generateStaticParams() {
-  const projects = await getFeaturedProjects();
+  const projects = await getVisibleProjects();
   return projects.map((project) => ({ slug: project.slug }));
 }
 

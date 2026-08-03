@@ -84,9 +84,24 @@ export async function createProject(
     return { status: "error", message: "Subí una foto de portada o pegá una URL." };
   }
 
+  // Orden de aparición: por defecto el más reciente va primero, así que un
+  // proyecto nuevo entra con position = mínimo actual - 1 (el staff puede
+  // reordenar a mano después arrastrando en /admin/proyectos).
+  const { data: firstProject } = await supabase
+    .from("projects")
+    .select("position")
+    .order("position", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
   const { data: project, error } = await supabase
     .from("projects")
-    .insert({ ...projectData, cover_url: finalCoverUrl, cover_thumb_url: finalCoverThumbUrl })
+    .insert({
+      ...projectData,
+      cover_url: finalCoverUrl,
+      cover_thumb_url: finalCoverThumbUrl,
+      position: (firstProject?.position ?? 0) - 1,
+    })
     .select("id")
     .single();
 
@@ -191,6 +206,25 @@ export async function deleteProject(id: string): Promise<{ status: "success" | "
   revalidatePath("/admin/proyectos");
   revalidatePath("/proyectos");
   return { status: "success", message: "Proyecto eliminado." };
+}
+
+/** Persiste el orden de arrastre de los proyectos (home y /proyectos): recibe los ids en el orden final y les asigna position 0..n-1. */
+export async function reorderProjects(orderedIds: string[]): Promise<{ status: "success" | "error"; message: string }> {
+  const supabase = await createClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("projects").update({ position: index }).eq("id", id))
+  );
+  const error = results.find((r) => r.error)?.error;
+
+  if (error) {
+    return { status: "error", message: "No pudimos guardar el nuevo orden." };
+  }
+
+  revalidatePath("/admin/proyectos");
+  revalidatePath("/proyectos");
+  revalidatePath("/");
+  return { status: "success", message: "Orden guardado." };
 }
 
 // ---------------------------------------------------------------------------
@@ -328,8 +362,19 @@ export async function addProjectImage(
     return { status: "error", message: "Subí una imagen o pegá una URL." };
   }
 
+  // El form de alta ya no manda `position` (se arrastra para reordenar
+  // después, ver ProjectImageManager): toda foto nueva se agrega al final.
+  const { data: lastImage } = await supabase
+    .from("project_images")
+    .select("position")
+    .eq("project_id", projectId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { error } = await supabase.from("project_images").insert({
     ...imageData,
+    position: (lastImage?.position ?? -1) + 1,
     stage_id: normalizeStageId(stage_id),
     url: finalUrl,
     thumb_url: finalThumbUrl,
@@ -404,6 +449,27 @@ export async function deleteProjectImage(
   revalidatePath(`/admin/proyectos/${projectId}`);
   revalidatePath("/proyectos");
   return { status: "success", message: "Imagen eliminada." };
+}
+
+/** Persiste el orden de arrastre de las fotos: recibe los ids en el orden final y les asigna position 0..n-1. */
+export async function reorderProjectImages(
+  projectId: string,
+  orderedIds: string[]
+): Promise<{ status: "success" | "error"; message: string }> {
+  const supabase = await createClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("project_images").update({ position: index }).eq("id", id))
+  );
+  const error = results.find((r) => r.error)?.error;
+
+  if (error) {
+    return { status: "error", message: "No pudimos guardar el nuevo orden." };
+  }
+
+  revalidatePath(`/admin/proyectos/${projectId}`);
+  revalidatePath("/proyectos");
+  return { status: "success", message: "Orden guardado." };
 }
 
 // ---------------------------------------------------------------------------
@@ -570,6 +636,31 @@ export async function deleteProjectStage(
 
   revalidatePath(`/admin/proyectos/${projectId}`);
   return { status: "success", message: "Hito eliminado." };
+}
+
+/**
+ * Persiste el orden de arrastre de la línea de tiempo (útil/custom
+ * intercalados libremente): recibe los ids en el orden final y les asigna
+ * position 0..n-1. No valida pertenencia hito-por-hito porque la RLS
+ * `project_stages_staff_write` ya exige is_staff() en cada update.
+ */
+export async function reorderProjectStages(
+  projectId: string,
+  orderedIds: string[]
+): Promise<{ status: "success" | "error"; message: string }> {
+  const supabase = await createClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("project_stages").update({ position: index }).eq("id", id))
+  );
+  const error = results.find((r) => r.error)?.error;
+
+  if (error) {
+    return { status: "error", message: "No pudimos guardar el nuevo orden." };
+  }
+
+  revalidatePath(`/admin/proyectos/${projectId}`);
+  return { status: "success", message: "Orden guardado." };
 }
 
 // ---------------------------------------------------------------------------

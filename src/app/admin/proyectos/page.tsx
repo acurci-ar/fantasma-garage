@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { DataTable, type DataTableColumn, type DataTableRow } from "@/components/admin/DataTable";
+import { ProjectOrderManager } from "@/features/admin/ProjectOrderManager";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Project } from "@/types/database";
 
@@ -21,7 +22,7 @@ async function getProjects(): Promise<Project[]> {
   const { data } = await supabase
     .from("projects")
     .select("*, images:project_images(*)")
-    .order("year", { ascending: false });
+    .order("position", { ascending: true });
   return (data ?? []) as Project[];
 }
 
@@ -29,7 +30,7 @@ const columns: DataTableColumn[] = [
   { id: "vehiculo", header: "Vehículo", sortable: true },
   { id: "etapa", header: "Etapa", sortable: true },
   { id: "visibilidad", header: "Visibilidad", sortable: true },
-  { id: "publicado", header: "Publicado", sortable: true },
+  { id: "home", header: "En home", sortable: true },
   { id: "fotos", header: "Fotos", sortable: true },
   { id: "acciones", header: "", align: "right" },
 ];
@@ -47,7 +48,7 @@ export default async function AdminProjectsPage() {
         vehiculo: `${project.make} ${project.model}`.toLowerCase(),
         etapa: status,
         visibilidad: project.visibility,
-        publicado: project.featured ? 1 : 0,
+        home: project.featured ? 1 : 0,
         fotos: project.images?.length ?? 0,
       },
       cells: {
@@ -58,7 +59,7 @@ export default async function AdminProjectsPage() {
             {project.visibility === "private" ? "Privado" : "Público"}
           </Badge>
         ),
-        publicado: <Badge tone={project.featured ? "primary" : "default"}>{project.featured ? "Sí" : "No"}</Badge>,
+        home: <Badge tone={project.featured ? "primary" : "default"}>{project.featured ? "Sí" : "No"}</Badge>,
         fotos: <span className="text-foreground/60">{project.images?.length ?? 0}</span>,
         acciones: (
           <Link href={`/admin/proyectos/${project.id}`} className="text-xs font-semibold uppercase text-primary hover:underline">
@@ -83,6 +84,19 @@ export default async function AdminProjectsPage() {
         <p className="mt-6 text-sm text-foreground/50">
           Supabase no está configurado en este entorno (modo demo): el listado real aparece cuando esté conectado.
         </p>
+      )}
+
+      {isSupabaseConfigured() && projects.length > 0 && (
+        <div className="mt-8">
+          <ProjectOrderManager
+            projects={projects.map((project) => ({
+              id: project.id,
+              title: `${project.make} ${project.model} · ${project.year}`,
+              coverUrl: project.cover_thumb_url ?? project.cover_url,
+              featured: project.featured,
+            }))}
+          />
+        </div>
       )}
 
       {isSupabaseConfigured() && (

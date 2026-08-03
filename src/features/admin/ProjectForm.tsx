@@ -208,9 +208,13 @@ export function ProjectForm({
             defaultChecked={project?.featured ?? false}
             className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
           />
-          Publicado en /proyectos y la home
+          Destacado en la home
         </label>
       </div>
+      <p className="-mt-3 text-xs text-foreground/40">
+        Esto solo controla si aparece entre los 3 destacados de la home. En /proyectos aparecen siempre todos los
+        proyectos públicos, más los privados a los que cada usuario tenga acceso otorgado.
+      </p>
 
       <div className="space-y-5 rounded-sm border border-secondary/30 p-5">
         <p className={labelClasses}>Foto de portada</p>

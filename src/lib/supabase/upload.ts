@@ -150,6 +150,65 @@ export async function uploadPrivateFile(
 /** Ancho de la miniatura de un documento (ej. foto de una factura), bastante más chica que la de fotos de galería porque acá solo se usa como ícono/preview en una lista. */
 const DOCUMENT_THUMB_WIDTH_PX = 320;
 
+/**
+ * Renderiza la primera página de un PDF a PNG con pdfjs-dist + @napi-rs/canvas
+ * (ambos con binarios prearmados vía WASM/napi, sin compilar nada — pensado
+ * para andar en el runtime serverless de Vercel, a diferencia de "canvas"
+ * clásico que necesita Cairo/Pango instalados en el sistema). Devuelve null
+ * ante cualquier error (PDF corrupto, protegido con contraseña, etc.): no es
+ * crítico, el documento se guarda igual sin miniatura.
+ *
+ * `standardFontDataUrl` apunta a los archivos de fuentes estándar que trae
+ * el propio paquete (necesarios para textos con fuentes no embebidas en el
+ * PDF, algo común en facturas/remitos generados por sistemas de gestión).
+ * Se resuelve con `process.cwd()` en vez de `import.meta.url`/`require.resolve`
+ * porque es lo único estable tanto en dev como en una función serverless de
+ * Vercel, sin importar si Next.js terminó empaquetando este módulo como
+ * CJS o ESM.
+ */
+async function renderPdfFirstPageToPng(pdfBuffer: Buffer): Promise<Buffer | null> {
+  try {
+    const path = await import("node:path");
+    const [{ createCanvas }, pdfjs] = await Promise.all([
+      import("@napi-rs/canvas"),
+      import("pdfjs-dist/legacy/build/pdf.mjs"),
+    ]);
+
+    const standardFontDataUrl = path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts") + path.sep;
+
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      standardFontDataUrl,
+      useSystemFonts: true,
+    });
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = DOCUMENT_THUMB_WIDTH_PX / baseViewport.width;
+    const viewport = page.getViewport({ scale });
+
+    const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
+    const context = canvas.getContext("2d");
+    // @napi-rs/canvas implementa la misma API de Canvas 2D que pdfjs-dist
+    // espera (getContext, drawImage, etc.); el cast es porque sus tipos no
+    // matchean exactamente los de lib.dom.d.ts, pero en runtime funcionan.
+    // `canvas: null` porque el tipo exige la propiedad igual, aunque
+    // pdfjs-dist siga soportando (a propósito, por compatibilidad) renderizar
+    // solo con `canvasContext` cuando `canvas` es null.
+    await page.render({
+      canvas: null,
+      canvasContext: context as unknown as CanvasRenderingContext2D,
+      viewport,
+    }).promise;
+
+    await loadingTask.destroy();
+    return canvas.toBuffer("image/png");
+  } catch {
+    return null;
+  }
+}
+
 export interface UploadedPrivateDocument {
   path: string;
   /** null si el archivo no es una imagen, o si por algún motivo no se pudo generar la miniatura (no es un error fatal: el documento se sube igual). */
@@ -184,21 +243,32 @@ export async function uploadPrivateDocument(
   if (error) return { error: "No pudimos subir el archivo. Probá de nuevo." };
 
   let thumbnailPath: string | null = null;
-  if (file.type.startsWith("image/")) {
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+  if (file.type.startsWith("image/") || isPdf) {
     try {
-      const thumbBuffer = await sharp(buffer, { failOn: "none" })
-        .rotate()
-        .resize({ width: DOCUMENT_THUMB_WIDTH_PX, withoutEnlargement: true })
-        .webp({ quality: 70 })
-        .toBuffer();
-      const candidateThumbPath = `${folder}/${Date.now()}-thumb-${sanitizeFilename(file.name)}.webp`;
-      const { error: thumbError } = await supabase.storage
-        .from(bucket)
-        .upload(candidateThumbPath, thumbBuffer, { upsert: true, contentType: "image/webp" });
-      if (!thumbError) thumbnailPath = candidateThumbPath;
+      // Para PDF, primero se rasteriza la 1ª página a PNG (pdfjs-dist +
+      // @napi-rs/canvas) y de ahí en más es el mismo pipeline que una
+      // imagen: sharp la redimensiona/comprime a webp, consistente con el
+      // resto de las miniaturas del sitio.
+      const sourceBuffer = isPdf ? await renderPdfFirstPageToPng(buffer) : buffer;
+
+      if (sourceBuffer) {
+        const thumbBuffer = await sharp(sourceBuffer, { failOn: "none" })
+          .rotate()
+          .resize({ width: DOCUMENT_THUMB_WIDTH_PX, withoutEnlargement: true })
+          .webp({ quality: 70 })
+          .toBuffer();
+        const candidateThumbPath = `${folder}/${Date.now()}-thumb-${sanitizeFilename(file.name)}.webp`;
+        const { error: thumbError } = await supabase.storage
+          .from(bucket)
+          .upload(candidateThumbPath, thumbBuffer, { upsert: true, contentType: "image/webp" });
+        if (!thumbError) thumbnailPath = candidateThumbPath;
+      }
     } catch {
-      // La miniatura es una optimización visual, no algo crítico: si sharp
-      // no pudo procesar la imagen, el documento se guarda igual sin ella.
+      // La miniatura es una optimización visual, no algo crítico: si falla
+      // (imagen corrupta, PDF protegido con contraseña, etc.) el documento
+      // se guarda igual sin ella — el front cae al ícono genérico por tipo.
     }
   }
 

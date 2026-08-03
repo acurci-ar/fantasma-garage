@@ -23,7 +23,7 @@ export default async function HomePage() {
     await Promise.all([
       getSiteSettings(),
       getServices(),
-      getFeaturedProjects(),
+      getFeaturedProjects(3),
       getGalleries(),
       getFeaturedVideos(),
       getFeaturedProducts(),

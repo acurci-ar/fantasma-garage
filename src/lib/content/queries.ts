@@ -46,14 +46,41 @@ export async function getServices(): Promise<Service[]> {
   }, SERVICES);
 }
 
-export async function getFeaturedProjects(): Promise<Project[]> {
+/**
+ * Proyectos destacados para la home (`featured = true`), ordenados por
+ * `position` (arrastrable desde /admin/proyectos; por defecto el más
+ * reciente primero). `limit` es solo para la home (ver page.tsx, que pide
+ * 3) — sin límite trae todos los destacados.
+ */
+export async function getFeaturedProjects(limit?: number): Promise<Project[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    let query = supabase
+      .from("projects")
+      .select("*, images:project_images(*)")
+      .eq("featured", true)
+      .order("position", { ascending: true });
+    if (limit) query = query.limit(limit);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []) as Project[];
+  }, limit ? PROJECTS.slice(0, limit) : PROJECTS);
+}
+
+/**
+ * Todos los proyectos visibles para quien está mirando ahora — públicos +
+ * los privados a los que tenga project_access (RLS `projects_public_read`
+ * ya resuelve esto solo) — sin filtrar por `featured`, que solo controla
+ * qué aparece en la home. Usada en /proyectos (el índice) y en
+ * generateStaticParams de las fichas.
+ */
+export async function getVisibleProjects(): Promise<Project[]> {
   return safeQuery(async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("projects")
       .select("*, images:project_images(*)")
-      .eq("featured", true)
-      .order("year", { ascending: false });
+      .order("position", { ascending: true });
     if (error) throw error;
     return (data ?? []) as Project[];
   }, PROJECTS);

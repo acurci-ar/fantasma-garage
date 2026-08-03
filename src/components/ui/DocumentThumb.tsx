@@ -25,10 +25,10 @@ const KIND_STYLES: Record<FileKind, { label: string; className: string }> = {
 };
 
 /**
- * Preview de un documento: si hay `thumbnailUrl` (generada solo para
- * archivos-imagen, ver uploadPrivateDocument en lib/supabase/upload.ts)
- * muestra esa miniatura — la gran mayoría van a ser fotos de facturas. Si
- * no, muestra un ícono genérico según tipo de archivo (PDF/Word/Excel/otro)
+ * Preview de un documento: si hay `thumbnailUrl` (generada para imágenes y
+ * PDFs — la 1ª página rasterizada en este último caso, ver
+ * uploadPrivateDocument en lib/supabase/upload.ts) muestra esa miniatura.
+ * Si no, muestra un ícono genérico según tipo de archivo (Word/Excel/otro)
  * inferido de mime_type o de la extensión del nombre.
  *
  * Usa <img> en vez de next/image a propósito: `thumbnailUrl` es una signed

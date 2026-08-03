@@ -196,6 +196,8 @@ export interface Project {
   cover_url: string;
   /** Miniatura de portada para grillas/tarjetas. Null si cover_url se cargó pegando una URL. */
   cover_thumb_url: string | null;
+  /** Orden de aparición en home y /proyectos (ascendente); por defecto el más reciente queda primero, reordenable a mano en /admin/proyectos. */
+  position: number;
   featured: boolean;
   seo_title: string | null;
   seo_description: string | null;
