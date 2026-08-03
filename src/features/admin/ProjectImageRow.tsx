@@ -36,7 +36,22 @@ export function ProjectImageRow({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-card">
-            <Image src={image.thumb_url ?? image.url} alt={image.alt} fill sizes="56px" className="object-cover" />
+            {/* draggable={false}: los <img> son arrastrables por el navegador
+                por defecto, aunque no les pongamos `draggable`. Sin esto, al
+                intentar reordenar arrastrando desde la foto (el elemento más
+                grande de la fila, lo más natural para agarrar) el navegador
+                dispara su drag nativo de imagen en vez de nuestro
+                onDragStart (que solo está en DragHandle) — el drop no hace
+                nada porque draggingIndex nunca se setea. Forzar el drag acá
+                deshabilitado obliga a usar el ícono de agarre, que sí anda. */}
+            <Image
+              src={image.thumb_url ?? image.url}
+              alt={image.alt}
+              fill
+              sizes="56px"
+              className="object-cover"
+              draggable={false}
+            />
           </span>
           <div className="text-sm">
             <p className="text-foreground/80">

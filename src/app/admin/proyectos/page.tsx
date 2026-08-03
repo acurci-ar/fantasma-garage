@@ -15,15 +15,21 @@ const statusLabel: Record<string, string> = {
   en_pausa: "En pausa",
 };
 
-async function getProjects(): Promise<Project[]> {
-  if (!isSupabaseConfigured()) return [];
+async function getProjects(): Promise<{ projects: Project[]; error: string | null }> {
+  if (!isSupabaseConfigured()) return { projects: [], error: null };
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("projects")
     .select("*, images:project_images(*)")
     .order("position", { ascending: true });
-  return (data ?? []) as Project[];
+  // A diferencia de las consultas públicas (lib/content/queries.ts), acá NO
+  // hay fallback a datos de demostración: este es el panel de admin, así que
+  // si la consulta falla (ej. una migración pendiente de aplicar) hay que
+  // mostrarlo explícitamente en vez de aparentar silenciosamente "0
+  // proyectos", que llevó justamente a no detectar a tiempo que faltaba
+  // correr 0017_project_position.sql contra la base real.
+  return { projects: (data ?? []) as Project[], error: error?.message ?? null };
 }
 
 const columns: DataTableColumn[] = [
@@ -36,7 +42,7 @@ const columns: DataTableColumn[] = [
 ];
 
 export default async function AdminProjectsPage() {
-  const projects = await getProjects();
+  const { projects, error } = await getProjects();
 
   const rows: DataTableRow[] = projects.map((project) => {
     const status = statusLabel[project.status] ?? project.status;
@@ -83,6 +89,14 @@ export default async function AdminProjectsPage() {
       {!isSupabaseConfigured() && (
         <p className="mt-6 text-sm text-foreground/50">
           Supabase no está configurado en este entorno (modo demo): el listado real aparece cuando esté conectado.
+        </p>
+      )}
+
+      {isSupabaseConfigured() && error && (
+        <p className="mt-6 rounded-sm border border-red-400/40 bg-red-400/10 p-4 text-sm text-red-400">
+          No se pudieron cargar los proyectos: {error}. Es probable que falte aplicar alguna migración de{" "}
+          <code>supabase/migrations</code> contra la base real (Dashboard de Supabase → SQL Editor, o{" "}
+          <code>supabase db push</code>).
         </p>
       )}
 

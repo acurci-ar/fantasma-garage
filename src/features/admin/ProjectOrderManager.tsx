@@ -97,7 +97,8 @@ export function ProjectOrderManager({ projects }: { projects: OrderableProject[]
               >
                 <DragHandle {...dragHandleProps(index)} />
                 <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-sm bg-card">
-                  <Image src={project.coverUrl} alt="" fill sizes="40px" className="object-cover" />
+                  {/* draggable={false}: ver comentario en ProjectImageRow — sin esto, arrastrar desde la miniatura dispara el drag nativo del navegador en vez del reorder. */}
+                  <Image src={project.coverUrl} alt="" fill sizes="40px" className="object-cover" draggable={false} />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-foreground/80">{project.title}</span>
                 {project.featured && (
