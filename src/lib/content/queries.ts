@@ -105,8 +105,15 @@ export async function getProjectBySlug(slug: string): Promise<Project | null> {
       .single();
     if (error) throw error;
     const project = data as Project;
+    // Los recursos embebidos (images/videos/stages) llegan de Postgres en su
+    // orden interno (básicamente el de inserción), no en el `position` que
+    // el admin actualiza al arrastrar en ProjectImageManager/ProjectVideoForm
+    // /ProjectStageManager — hay que ordenarlos acá a mano o la ficha pública
+    // ignora el reordenamiento hecho en /admin.
     return {
       ...project,
+      images: [...(project.images ?? [])].sort((a, b) => a.position - b.position),
+      videos: [...(project.videos ?? [])].sort((a, b) => a.position - b.position),
       stages: (project.stages ?? []).filter((s) => s.enabled).sort((a, b) => a.position - b.position),
     };
   }, PROJECTS.find((p) => p.slug === slug) ?? null);
