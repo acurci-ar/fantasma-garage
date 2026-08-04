@@ -1,6 +1,50 @@
 /** @type {import('next').NextConfig} */
+
+// Cabeceras de seguridad aplicadas a toda respuesta (sección 7.1 —
+// hallazgo de la auditoría de Santiago, ago-2026). No usamos un
+// Content-Security-Policy basado en nonces: el App Router de Next 14
+// inyecta sus propios <script> inline para hidratar (self.__next_f.push),
+// y sin nonce eso requiere 'unsafe-inline' en script-src igual — hacerlo
+// "bien" con nonces exige generar uno por request en el middleware y
+// propagarlo a next/script, que es un cambio más grande y no está libre
+// de riesgo (Next tuvo un CVE de XSS específico en su implementación de
+// nonces: GHSA-ffhc-5mcf-pf4q). Preferimos una CSP más simple que igual
+// cierra la superficie que más importa — exfiltración a dominios externos,
+// framing, tipos MIME sniffeados — y dejamos la variante con nonces para
+// cuando migremos a Next 15 (donde además se resuelve ese CVE).
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co",
+  "frame-src https://www.youtube-nocookie.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const SECURITY_HEADERS = [
+  { key: "Content-Security-Policy", value: CSP },
+  // Redundante con frame-ancestors de la CSP de arriba, pero lo dejamos
+  // para navegadores viejos que no soportan frame-ancestors.
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+];
+
 const nextConfig = {
   reactStrictMode: true,
+  // No anunciar el framework en cada respuesta (fingerprinting trivial del
+  // stack para apuntar CVEs conocidas de Next — hallazgo de la auditoría).
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
@@ -40,6 +84,9 @@ const nextConfig = {
         "./node_modules/@napi-rs/canvas-linux-x64-gnu/**",
       ],
     },
+  },
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
   async redirects() {
     return [];

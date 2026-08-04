@@ -2,7 +2,15 @@
 
 import { newsletterSchema } from "@/lib/validation/newsletter";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rateLimit";
 import type { NewsletterInterestTag } from "@/types/database";
+
+// 5 altas/actualizaciones cada 10 minutos por IP (mismo criterio que
+// contacto — sección 7.1, auditoría de Santiago, ago-2026): alcanza para
+// alguien corrigiendo intereses varias veces, no para un script haciendo
+// upsert masivo de emails falsos.
+const NEWSLETTER_RATE_LIMIT = 5;
+const NEWSLETTER_RATE_WINDOW_MS = 10 * 60 * 1000;
 
 export interface NewsletterActionState {
   status: "idle" | "success" | "error";
@@ -54,6 +62,14 @@ export async function subscribeNewsletter(
       status: "error",
       message: "Revisá el email ingresado.",
       fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const rateLimit = checkRateLimit(`newsletter:${getClientIp()}`, NEWSLETTER_RATE_LIMIT, NEWSLETTER_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return {
+      status: "error",
+      message: `Demasiados intentos. Probá de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos.`,
     };
   }
 

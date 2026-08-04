@@ -2,12 +2,20 @@
 
 import { contactFormSchema } from "@/lib/validation/contact";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rateLimit";
 
 export interface ContactActionState {
   status: "idle" | "success" | "error";
   message: string;
   fieldErrors?: Record<string, string[]>;
 }
+
+// 5 envíos cada 10 minutos por IP: generoso para alguien mandando un par de
+// mensajes por error, suficiente para frenar un script pegándole al form
+// (sección 7.1 — hallazgo de la auditoría de Santiago, ago-2026: antes solo
+// había honeypot, sin ningún límite de frecuencia).
+const CONTACT_RATE_LIMIT = 5;
+const CONTACT_RATE_WINDOW_MS = 10 * 60 * 1000;
 
 /**
  * Server Action del formulario de contacto (sección 5.8 / 7.5).
@@ -41,6 +49,14 @@ export async function submitContactForm(
   // Honeypot: si viene completo, es un bot. Respondemos "éxito" sin persistir.
   if (parsed.data.company) {
     return { status: "success", message: "¡Gracias! Te vamos a contactar a la brevedad." };
+  }
+
+  const rateLimit = checkRateLimit(`contact:${getClientIp()}`, CONTACT_RATE_LIMIT, CONTACT_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return {
+      status: "error",
+      message: `Recibimos varios mensajes tuyos en poco tiempo. Probá de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos.`,
+    };
   }
 
   if (!isSupabaseConfigured()) {

@@ -30,3 +30,29 @@ export const changePasswordSchema = z
   });
 
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+
+export const requestPasswordResetSchema = z.object({
+  email: z.string().trim().email("Ingresá un email válido."),
+});
+
+export type RequestPasswordResetFormValues = z.infer<typeof requestPasswordResetSchema>;
+
+/**
+ * A diferencia de changePasswordSchema, acá no hay current_password: se usa
+ * después de que el usuario ya llegó con una sesión de recuperación válida
+ * (link de email -> /auth/callback -> exchangeCodeForSession), así que no
+ * hay una contraseña actual que pedir — ver setNewPasswordAfterRecovery en
+ * actions/account.ts.
+ */
+export const setNewPasswordSchema = z
+  .object({
+    new_password: z.string().min(8, "La nueva contraseña tiene que tener al menos 8 caracteres.").max(72),
+    confirm_password: z.string().min(1, "Repetí la nueva contraseña."),
+  })
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirm_password"],
+  });
+
+export type SetNewPasswordFormValues = z.infer<typeof setNewPasswordSchema>;

@@ -9,6 +9,7 @@ import { newsletterSubscriberSchema } from "../src/lib/validation/admin/newslett
 import { videoSchema } from "../src/lib/validation/admin/video.ts";
 import { projectSchema } from "../src/lib/validation/admin/project.ts";
 import { gallerySchema } from "../src/lib/validation/admin/gallery.ts";
+import { requestPasswordResetSchema, setNewPasswordSchema } from "../src/lib/validation/account.ts";
 
 const validCheckout = {
   fullName: "Juan Pérez",
@@ -261,5 +262,31 @@ test("gallerySchema rechaza un estado inválido", () => {
     status: "activo",
     cover_url: "/images/galeria/sema.webp",
   });
+  assert.equal(result.success, false);
+});
+
+
+test("requestPasswordResetSchema acepta un email válido", () => {
+  const result = requestPasswordResetSchema.safeParse({ email: "cliente@example.com" });
+  assert.equal(result.success, true);
+});
+
+test("requestPasswordResetSchema rechaza un email inválido", () => {
+  const result = requestPasswordResetSchema.safeParse({ email: "no-es-un-email" });
+  assert.equal(result.success, false);
+});
+
+test("setNewPasswordSchema acepta contraseñas que coinciden y cumplen el mínimo", () => {
+  const result = setNewPasswordSchema.safeParse({ new_password: "unaClaveNueva123", confirm_password: "unaClaveNueva123" });
+  assert.equal(result.success, true);
+});
+
+test("setNewPasswordSchema rechaza si las contraseñas no coinciden", () => {
+  const result = setNewPasswordSchema.safeParse({ new_password: "unaClaveNueva123", confirm_password: "otraDistinta456" });
+  assert.equal(result.success, false);
+});
+
+test("setNewPasswordSchema rechaza contraseñas de menos de 8 caracteres", () => {
+  const result = setNewPasswordSchema.safeParse({ new_password: "corta1", confirm_password: "corta1" });
   assert.equal(result.success, false);
 });

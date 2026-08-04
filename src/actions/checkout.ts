@@ -2,6 +2,15 @@
 
 import { checkoutFormSchema } from "@/lib/validation/checkout";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { checkRateLimit, getClientIp } from "@/lib/utils/rateLimit";
+
+// 10 pedidos por hora por IP (sección 7.1 — auditoría de Santiago,
+// ago-2026): más laxo que contacto/newsletter porque acá hay costo real
+// para el negocio en falsos negativos (un cliente legítimo bloqueado en
+// medio de una compra), pero igual pone un techo a un script generando
+// pedidos falsos que dispararían descuentos de stock reales.
+const CHECKOUT_RATE_LIMIT = 10;
+const CHECKOUT_RATE_WINDOW_MS = 60 * 60 * 1000;
 
 export interface CheckoutActionState {
   status: "idle" | "success" | "error";
@@ -39,6 +48,14 @@ export async function createOrder(input: unknown): Promise<CheckoutActionState> 
   }
 
   const { items, ...customer } = parsed.data;
+
+  const rateLimit = checkRateLimit(`checkout:${getClientIp()}`, CHECKOUT_RATE_LIMIT, CHECKOUT_RATE_WINDOW_MS);
+  if (!rateLimit.allowed) {
+    return {
+      status: "error",
+      message: `Detectamos muchos intentos de pedido seguidos. Probá de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos, o contactanos por WhatsApp.`,
+    };
+  }
 
   if (!isSupabaseConfigured()) {
     return {

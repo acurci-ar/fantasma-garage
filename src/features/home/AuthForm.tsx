@@ -128,7 +128,7 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
 
       {mode === "login" && (
         <div className="text-right">
-          <Link href="/contacto" className="text-xs text-foreground/50 hover:text-primary">
+          <Link href="/recuperar" className="text-xs text-foreground/50 hover:text-primary">
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
