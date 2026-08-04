@@ -2,7 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { extractPlaylistId, fetchPlaylistVideos, type PlaylistVideo } from "@/lib/youtube/playlist";
-import type { Gallery, GalleryImage, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
+import type { Category, Gallery, GalleryImage, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
 import {
   FEATURED_PRODUCTS,
   GALLERIES,
@@ -240,30 +240,42 @@ export async function getChannelPlaylistVideos(): Promise<PlaylistVideo[] | null
   }
 }
 
+/** Los embebidos (product_images) llegan en orden de inserción, no en el
+ * `position` que se actualiza al arrastrar en /admin/productos/[id]
+ * (ProductImageManager) — hay que ordenarlos acá a mano, igual que
+ * getProjectBySlug con project_images. La primera foto (position más baja)
+ * es la que se usa como portada en catálogo, home y ficha. */
+function sortProductImages(product: Product): Product {
+  return { ...product, images: [...(product.images ?? [])].sort((a, b) => a.position - b.position) };
+}
+
+/** Selección curada para la home (FeaturedShop): productos publicados marcados como `featured` desde /admin/productos. */
 export async function getFeaturedProducts(): Promise<Product[]> {
   return safeQuery(async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("products")
-      .select("*, images:product_images(*), variants:product_variants(*)")
+      .select("*, images:product_images(*), variants:product_variants(*), category:categories(*)")
       .eq("status", "published")
-      .limit(4);
+      .eq("featured", true)
+      .order("created_at", { ascending: false })
+      .limit(8);
     if (error) throw error;
-    return (data ?? []) as Product[];
+    return ((data ?? []) as Product[]).map(sortProductImages);
   }, FEATURED_PRODUCTS);
 }
 
-/** Catálogo completo (sin límite) para /tienda, a diferencia del recorte de 4 del home. */
+/** Catálogo completo (sin límite) para /tienda, a diferencia del recorte de la home. */
 export async function getAllProducts(): Promise<Product[]> {
   return safeQuery(async () => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("products")
-      .select("*, images:product_images(*), variants:product_variants(*)")
+      .select("*, images:product_images(*), variants:product_variants(*), category:categories(*)")
       .eq("status", "published")
       .order("created_at", { ascending: false });
     if (error) throw error;
-    return (data ?? []) as Product[];
+    return ((data ?? []) as Product[]).map(sortProductImages);
   }, FEATURED_PRODUCTS);
 }
 
@@ -272,12 +284,31 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("products")
-      .select("*, images:product_images(*), variants:product_variants(*)")
+      .select("*, images:product_images(*), variants:product_variants(*), category:categories(*)")
       .eq("slug", slug)
       .single();
     if (error) throw error;
-    return data as Product;
+    return sortProductImages(data as Product);
   }, FEATURED_PRODUCTS.find((p) => p.slug === slug) ?? null);
+}
+
+/** Categorías publicadas, para el filtro de /tienda y el selector del admin. */
+export async function getCategories(): Promise<Category[]> {
+  return safeQuery(async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from("categories").select("*").eq("status", "published").order("name", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Category[];
+  }, []);
+}
+
+/** Todas las categorías (incluye borrador/oculto), para el listado de /admin/categorias. */
+export async function getAllCategoriesForAdmin(): Promise<Category[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("categories").select("*").order("name", { ascending: true });
+  if (error) return [];
+  return (data ?? []) as Category[];
 }
 
 /**

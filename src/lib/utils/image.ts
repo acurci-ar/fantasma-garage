@@ -49,3 +49,30 @@ export function isImageTooHeavy(bytes: number, width?: number, height?: number):
 export function exceedsHardLimit(bytes: number): boolean {
   return bytes > MAX_PRODUCT_IMAGE_BYTES;
 }
+
+/**
+ * Hosts externos habilitados en `images.remotePatterns` (next.config.mjs) —
+ * mantener en sync con ese archivo. next/image tira un error en runtime (la
+ * imagen no se muestra, sin más aviso) si la URL es absoluta y su host no
+ * está en esta lista, algo que pasa seguido cuando el staff pega la URL de
+ * la foto de un proveedor externo. Ver needsUnoptimizedImage.
+ */
+const OPTIMIZABLE_IMAGE_HOSTS = [/\.supabase\.co$/, /^i\.ytimg\.com$/];
+
+/**
+ * true si next/image NO va a poder optimizar esta URL (host externo fuera
+ * de remotePatterns) y por lo tanto hay que pasarle `unoptimized` a mano
+ * para que al menos se muestre tal cual, sin pasar por el optimizador.
+ * Rutas relativas (`/images/...`) y blobs locales siempre devuelven false
+ * (sí se pueden optimizar / no aplica).
+ */
+export function needsUnoptimizedImage(url: string | null | undefined): boolean {
+  if (!url) return false;
+  if (!/^https?:\/\//.test(url)) return false;
+  try {
+    const { hostname } = new URL(url);
+    return !OPTIMIZABLE_IMAGE_HOSTS.some((pattern) => pattern.test(hostname));
+  } catch {
+    return false;
+  }
+}

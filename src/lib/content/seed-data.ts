@@ -254,6 +254,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     category_id: null,
     brand_id: null,
     status: "published",
+    featured: true,
     seo_title: null,
     seo_description: null,
     images: [
@@ -277,6 +278,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     category_id: null,
     brand_id: null,
     status: "published",
+    featured: true,
     seo_title: null,
     seo_description: null,
     images: [

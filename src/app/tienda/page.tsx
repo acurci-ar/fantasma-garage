@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ShopCatalog } from "@/features/home/ShopCatalog";
-import { getAllProducts } from "@/lib/content/queries";
+import { getAllProducts, getCategories } from "@/lib/content/queries";
 
 export const metadata: Metadata = {
   title: "Tienda",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TiendaPage() {
-  const products = await getAllProducts();
+  const [products, categories] = await Promise.all([getAllProducts(), getCategories()]);
 
   return (
     <Section className="pt-32">
@@ -20,7 +20,7 @@ export default async function TiendaPage() {
         description="Catálogo curado de repuestos y piezas. El pago con Mercado Pago se incorpora en una próxima etapa; por ahora el pedido queda pendiente de pago y te contactamos para coordinarlo."
       />
       <div className="mt-12">
-        <ShopCatalog products={products} />
+        <ShopCatalog products={products} categories={categories} />
       </div>
     </Section>
   );

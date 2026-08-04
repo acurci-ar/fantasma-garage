@@ -5,7 +5,9 @@ import { Section } from "@/components/ui/Section";
 import { Badge } from "@/components/ui/Badge";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { formatCurrency } from "@/lib/utils/format";
+import { needsUnoptimizedImage } from "@/lib/utils/image";
 import { getAllProducts, getProductBySlug } from "@/lib/content/queries";
+import { ProductGallery } from "@/features/home/ProductGallery";
 
 export async function generateStaticParams() {
   const products = await getAllProducts();
@@ -32,8 +34,8 @@ export default async function ProductPage({ params }: { params: { slug: string }
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const image = product.images[0];
   const outOfStock = product.stock <= 0;
+  const onSale = product.sale_price != null && product.sale_price < product.price;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -42,6 +44,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
     sku: product.sku,
     description: product.short_description,
     image: product.images.map((img) => img.url),
+    category: product.category?.name,
     offers: {
       "@type": "Offer",
       priceCurrency: product.currency,
@@ -60,25 +63,36 @@ export default async function ProductPage({ params }: { params: { slug: string }
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-sm bg-card">
-          {image && (
-            <Image src={image.url} alt={image.alt} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" priority />
-          )}
-          {outOfStock && (
-            <span className="absolute left-4 top-4 rounded-sm bg-background/85 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-foreground/70">
-              A pedido
-            </span>
-          )}
+        <div>
+          <ProductGallery images={product.images} outOfStock={outOfStock} />
         </div>
 
         <div>
-          <p className="text-xs uppercase tracking-wide text-foreground/40">SKU: {product.sku}</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-foreground/40">
+            <span>SKU: {product.sku}</span>
+            {product.category && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{product.category.name}</span>
+              </>
+            )}
+          </div>
           <h1 className="mt-2 font-display text-3xl uppercase tracking-tight text-foreground sm:text-4xl">
             {product.name}
           </h1>
-          <p className="mt-4 text-2xl text-primary">
-            {formatCurrency(product.sale_price ?? product.price, product.currency)}
-          </p>
+
+          {onSale ? (
+            <div className="mt-4 flex flex-wrap items-baseline gap-3">
+              <p className="text-lg text-foreground/40 line-through">{formatCurrency(product.price, product.currency)}</p>
+              <p className="text-2xl font-semibold text-primary">
+                {formatCurrency(product.sale_price as number, product.currency)}
+              </p>
+              <Badge tone="primary">Oferta</Badge>
+            </div>
+          ) : (
+            <p className="mt-4 text-2xl text-primary">{formatCurrency(product.price, product.currency)}</p>
+          )}
+
           {product.short_description && (
             <p className="mt-6 text-base leading-relaxed text-foreground/75">{product.short_description}</p>
           )}

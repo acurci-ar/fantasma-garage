@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { formatBytes, isImageTooHeavy, exceedsHardLimit, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
+import { formatBytes, isImageTooHeavy, exceedsHardLimit, needsUnoptimizedImage, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
 import { resizeImageForUpload } from "@/lib/utils/clientImageResize";
 
 const inputClasses =
@@ -113,7 +113,7 @@ export function ImageUploadField({
               fill
               sizes="128px"
               className="object-cover"
-              unoptimized={Boolean(filePreview)}
+              unoptimized={Boolean(filePreview) || needsUnoptimizedImage(previewSrc)}
             />
           );
         })()}

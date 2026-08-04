@@ -4,6 +4,7 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/utils/format";
+import { needsUnoptimizedImage } from "@/lib/utils/image";
 import type { Product } from "@/types/database";
 
 export function FeaturedShop({ products }: { products: Product[] }) {
@@ -23,6 +24,8 @@ export function FeaturedShop({ products }: { products: Product[] }) {
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {products.map((product) => {
           const image = product.images[0];
+          const imgSrc = image?.thumb_url ?? image?.url;
+          const onSale = product.sale_price != null && product.sale_price < product.price;
           return (
             <Link
               key={product.id}
@@ -30,14 +33,20 @@ export function FeaturedShop({ products }: { products: Product[] }) {
               className="group block overflow-hidden rounded-sm border border-secondary/30 bg-card/40 transition-colors duration-220 hover:border-primary/60"
             >
               <div className="relative aspect-square overflow-hidden">
-                {image && (
+                {imgSrc && (
                   <Image
-                    src={image.thumb_url ?? image.url}
-                    alt={image.alt}
+                    src={imgSrc}
+                    alt={image?.alt ?? ""}
                     fill
                     sizes="(min-width: 1024px) 25vw, 50vw"
                     className="object-cover transition duration-500 group-hover:scale-105 motion-reduce:transition-none"
+                    unoptimized={needsUnoptimizedImage(imgSrc)}
                   />
+                )}
+                {onSale && (
+                  <span className="absolute right-3 top-3 rounded-sm bg-primary px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-background">
+                    Oferta
+                  </span>
                 )}
                 {product.stock <= 0 && (
                   <span className="absolute left-3 top-3 rounded-sm bg-background/85 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/70">
@@ -49,9 +58,14 @@ export function FeaturedShop({ products }: { products: Product[] }) {
                 <h3 className="font-display text-sm uppercase tracking-tight text-foreground">
                   {product.name}
                 </h3>
-                <p className="mt-1 text-sm text-primary">
-                  {formatCurrency(product.sale_price ?? product.price, product.currency)}
-                </p>
+                {onSale ? (
+                  <p className="mt-1 flex flex-wrap items-baseline gap-2 text-sm">
+                    <span className="text-foreground/40 line-through">{formatCurrency(product.price, product.currency)}</span>
+                    <span className="font-semibold text-primary">{formatCurrency(product.sale_price as number, product.currency)}</span>
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-primary">{formatCurrency(product.price, product.currency)}</p>
+                )}
               </div>
             </Link>
           );

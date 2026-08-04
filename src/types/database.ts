@@ -87,6 +87,23 @@ export interface ProductVariant {
   stock: number;
 }
 
+/** Costos y proveedor de un producto — solo visible/editable por admin (ver RLS `product_internal_info_admin_only`). */
+export interface ProductInternalInfo {
+  product_id: UUID;
+  supplier_name: string | null;
+  supplier_link: string | null;
+  /** Lo pagado por el producto (USD), sin envío. */
+  cost_price: number | null;
+  weight_kg: number | null;
+  /** Calculado: weight_kg × 45 USD. */
+  shipping_cost: number;
+  /** Calculado: cost_price + shipping_cost. */
+  total_cost: number;
+  /** Calculado: cost_price × 1.12 + shipping_cost × 1.5. */
+  suggested_price: number;
+  updated_at: ISODateString;
+}
+
 export interface Product {
   id: UUID;
   slug: string;
@@ -102,12 +119,16 @@ export interface Product {
   category_id: UUID | null;
   brand_id: UUID | null;
   status: ContentStatus;
+  /** Si aparece en la selección curada de la home (FeaturedShop). */
+  featured: boolean;
   seo_title: string | null;
   seo_description: string | null;
   images: ProductImage[];
   variants: ProductVariant[];
   category?: Category | null;
   brand?: Brand | null;
+  /** Solo presente para quien tiene is_admin() — nunca se trae en las vistas públicas. */
+  internal?: ProductInternalInfo | null;
 }
 
 export type OrderStatus =

@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { slugify } from "@/lib/utils/format";
-import { formatBytes, isImageTooHeavy, exceedsHardLimit, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
-import type { Product } from "@/types/database";
+import { cn } from "@/lib/utils/cn";
+import type { Category, Product } from "@/types/database";
 import type { ProductActionState } from "@/actions/admin/products";
 
 const inputClasses =
   "w-full rounded-sm border border-secondary/50 bg-background/60 px-4 py-3 text-sm text-foreground placeholder:text-foreground/35 transition-colors duration-220 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+
+const inputErrorClasses = "border-red-500 focus:border-red-500 focus-visible:ring-red-500";
 
 const labelClasses = "mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60";
 
@@ -30,13 +31,27 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
+function parseNum(v: string): number | null {
+  const n = Number(v);
+  return v.trim() === "" || Number.isNaN(n) ? null : n;
+}
+
+function formatUsd(n: number): string {
+  return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function ProductForm({
   action,
   product,
+  categories,
+  /** Solo admin ve/edita la sección de información interna (costos, proveedor) — is_admin() en RLS, más estricto que el is_staff() del resto del form. */
+  canSeeInternal,
   submitLabel,
 }: {
   action: (prevState: ProductActionState, formData: FormData) => Promise<ProductActionState>;
   product?: Product;
+  categories: Category[];
+  canSeeInternal: boolean;
   submitLabel: string;
 }) {
   const [state, formAction] = useFormState(action, initialState);
@@ -48,60 +63,33 @@ export function ProductForm({
     if (!slugTouched) setSlug(slugify(name));
   }, [name, slugTouched]);
 
-  const image = product?.images?.[0];
+  // --- Info interna + cálculo de costo/precio sugerido (solo admin) -------
+  const internal = product?.internal;
+  const [costPrice, setCostPrice] = useState(internal?.cost_price != null ? String(internal.cost_price) : "");
+  const [weightKg, setWeightKg] = useState(internal?.weight_kg != null ? String(internal.weight_kg) : "");
+  const [price, setPrice] = useState(product?.price != null ? String(product.price) : "");
+  const [salePrice, setSalePrice] = useState(product?.sale_price != null ? String(product.sale_price) : "");
 
-  const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [fileWarning, setFileWarning] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
-  const urlInputRef = useRef<HTMLInputElement>(null);
+  const shippingCost = useMemo(() => (parseNum(weightKg) ?? 0) * 45, [weightKg]);
+  const totalCost = useMemo(() => (parseNum(costPrice) ?? 0) + shippingCost, [costPrice, shippingCost]);
+  const suggestedPrice = useMemo(
+    () => Math.round(((parseNum(costPrice) ?? 0) * 1.12 + shippingCost * 1.5) * 100) / 100,
+    [costPrice, shippingCost]
+  );
+  const hasCostData = parseNum(costPrice) !== null || parseNum(weightKg) !== null;
 
+  // Si el precio está vacío y se cargan datos de costo, se autocompleta con
+  // el Precio Sugerido — pedido del smoke test. Sigue siendo editable: en
+  // cuanto el staff lo toca, `price` deja de estar vacío y este efecto no
+  // vuelve a pisarlo.
   useEffect(() => {
-    return () => {
-      if (filePreview) URL.revokeObjectURL(filePreview);
-    };
-  }, [filePreview]);
+    if (price === "" && hasCostData) setPrice(String(suggestedPrice));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestedPrice, hasCostData]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    setFileWarning(null);
-    setFileError(null);
-
-    if (filePreview) {
-      URL.revokeObjectURL(filePreview);
-      setFilePreview(null);
-    }
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setFileError("El archivo tiene que ser una imagen.");
-      e.target.value = "";
-      return;
-    }
-
-    if (exceedsHardLimit(file.size)) {
-      setFileError(
-        `Pesa ${formatBytes(file.size)}. El máximo permitido es ${formatBytes(MAX_PRODUCT_IMAGE_BYTES)}: elegí una imagen más liviana.`
-      );
-      e.target.value = "";
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setFilePreview(objectUrl);
-    // Si se elige un archivo, tiene prioridad sobre la URL pegada a mano.
-    if (urlInputRef.current) urlInputRef.current.value = "";
-
-    const probe = document.createElement("img");
-    probe.onload = () => {
-      if (isImageTooHeavy(file.size, probe.naturalWidth, probe.naturalHeight)) {
-        setFileWarning(
-          `Pesa ${formatBytes(file.size)} (${probe.naturalWidth}×${probe.naturalHeight}px). Para que la web cargue rápido conviene achicarla a menos de ${formatBytes(400 * 1024)} y no más de 2000px de lado. Se puede subir igual.`
-        );
-      }
-    };
-    probe.src = objectUrl;
-  }
+  const priceBelowCost = canSeeInternal && totalCost > 0 && parseNum(price) !== null && (parseNum(price) as number) < totalCost;
+  const salePriceBelowCost =
+    canSeeInternal && totalCost > 0 && parseNum(salePrice) !== null && (parseNum(salePrice) as number) < totalCost;
 
   return (
     <form action={formAction} className="space-y-6">
@@ -146,7 +134,15 @@ export function ProductForm({
           <label htmlFor="sku" className={labelClasses}>
             SKU
           </label>
-          <input id="sku" name="sku" type="text" required defaultValue={product?.sku} className={inputClasses} />
+          <input
+            id="sku"
+            name="sku"
+            type="text"
+            placeholder={slug || "Se completa con el slug si lo dejás vacío"}
+            defaultValue={product?.sku}
+            className={inputClasses}
+          />
+          <p className="mt-1 text-xs text-foreground/40">Si lo dejás vacío, se completa con el slug.</p>
           <FieldError errors={state.fieldErrors?.sku} />
         </div>
         <div>
@@ -159,6 +155,36 @@ export function ProductForm({
             <option value="hidden">Oculto</option>
             <option value="discontinued">Discontinuado</option>
           </select>
+        </div>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label htmlFor="category_id" className={labelClasses}>
+            Categoría
+          </label>
+          <select id="category_id" name="category_id" defaultValue={product?.category_id ?? ""} className={inputClasses}>
+            <option value="">Sin categoría</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-foreground/40">
+            Editables desde <span className="text-foreground/60">/admin/categorias</span>.
+          </p>
+        </div>
+        <div className="flex items-end pb-3">
+          <label className="flex items-center gap-2 text-sm text-foreground/70">
+            <input
+              type="checkbox"
+              name="featured"
+              defaultChecked={product?.featured ?? false}
+              className="h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
+            />
+            Destacado (aparece en la home)
+          </label>
         </div>
       </div>
 
@@ -201,10 +227,16 @@ export function ProductForm({
             type="number"
             min="0"
             step="0.01"
-            required
-            defaultValue={product?.price}
-            className={inputClasses}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className={cn(inputClasses, priceBelowCost && inputErrorClasses)}
           />
+          {priceBelowCost && (
+            <p className="mt-1 text-xs font-semibold text-red-500">
+              El precio de venta (USD {formatUsd(parseNum(price) ?? 0)}) es menor al costo del producto (USD{" "}
+              {formatUsd(totalCost)}).
+            </p>
+          )}
           <FieldError errors={state.fieldErrors?.price} />
         </div>
         <div>
@@ -217,9 +249,16 @@ export function ProductForm({
             type="number"
             min="0"
             step="0.01"
-            defaultValue={product?.sale_price ?? ""}
-            className={inputClasses}
+            value={salePrice}
+            onChange={(e) => setSalePrice(e.target.value)}
+            className={cn(inputClasses, salePriceBelowCost && inputErrorClasses)}
           />
+          {salePriceBelowCost && (
+            <p className="mt-1 text-xs font-semibold text-red-500">
+              El precio de oferta (USD {formatUsd(parseNum(salePrice) ?? 0)}) es menor al costo del producto (USD{" "}
+              {formatUsd(totalCost)}).
+            </p>
+          )}
           <FieldError errors={state.fieldErrors?.sale_price} />
         </div>
         <div>
@@ -267,89 +306,102 @@ export function ProductForm({
         </div>
       </div>
 
-      <div className="space-y-5 rounded-sm border border-secondary/30 p-5">
-        <p className={labelClasses}>Imagen del producto</p>
+      {!product && (
+        <p className="rounded-sm border border-secondary/30 bg-card/40 p-4 text-xs text-foreground/50">
+          Las fotos se cargan después de crear el producto (próxima pantalla).
+        </p>
+      )}
 
-        <div className="grid gap-5 sm:grid-cols-2">
+      {canSeeInternal && (
+        <div className="space-y-5 rounded-sm border border-primary/30 bg-primary/5 p-5">
           <div>
-            <div className="flex items-center justify-between">
-              <span className="relative -top-px inline-flex h-32 w-32 items-center justify-center overflow-hidden rounded-sm bg-card">
-                {(() => {
-                  const previewSrc = filePreview ?? image?.url;
-                  if (!previewSrc) {
-                    return <span className="text-[11px] text-foreground/30">Sin imagen</span>;
-                  }
-                  return (
-                    <Image
-                      src={previewSrc}
-                      alt=""
-                      fill
-                      sizes="128px"
-                      className="object-cover"
-                      unoptimized={Boolean(filePreview)}
-                    />
-                  );
-                })()}
-              </span>
-            </div>
+            <p className={labelClasses}>Información interna (solo admin)</p>
+            <p className="text-xs text-foreground/50">No se muestra en la tienda pública, ni siquiera a editores.</p>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="image_file" className={labelClasses}>
-                Subir un archivo
+              <label htmlFor="supplier_name" className={labelClasses}>
+                Proveedor
               </label>
               <input
-                id="image_file"
-                name="image_file"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-foreground/70 file:mr-4 file:rounded-sm file:border-0 file:bg-primary file:px-4 file:py-2 file:text-xs file:font-semibold file:uppercase file:tracking-wide file:text-background hover:file:bg-primary/90"
-              />
-              {fileError && <p className="mt-2 text-xs text-red-400">{fileError}</p>}
-              {fileWarning && !fileError && <p className="mt-2 text-xs text-primary">{fileWarning}</p>}
-              <p className="mt-2 text-xs text-foreground/40">Máximo {formatBytes(MAX_PRODUCT_IMAGE_BYTES)}.</p>
-            </div>
-
-            <div>
-              <label htmlFor="image_url" className={labelClasses}>
-                ...o pegar una ruta/URL en su lugar
-              </label>
-              <input
-                ref={urlInputRef}
-                id="image_url"
-                name="image_url"
+                id="supplier_name"
+                name="supplier_name"
                 type="text"
-                placeholder="/images/productos/ejemplo.webp"
-                defaultValue={image?.url ?? ""}
-                onFocus={() => {
-                  // Si el staff vuelve a tocar la URL, que gane ella sobre el archivo elegido antes.
-                  if (filePreview) {
-                    URL.revokeObjectURL(filePreview);
-                    setFilePreview(null);
-                    setFileWarning(null);
-                    const fileInput = document.getElementById("image_file") as HTMLInputElement | null;
-                    if (fileInput) fileInput.value = "";
-                  }
-                }}
+                defaultValue={internal?.supplier_name ?? ""}
                 className={inputClasses}
               />
-              <FieldError errors={state.fieldErrors?.image_url} />
-              <p className="mt-2 text-xs text-foreground/40">
-                Si subís un archivo, tiene prioridad sobre esta URL.
-              </p>
+            </div>
+            <div>
+              <label htmlFor="supplier_link" className={labelClasses}>
+                Link
+              </label>
+              <input
+                id="supplier_link"
+                name="supplier_link"
+                type="text"
+                placeholder="https://..."
+                defaultValue={internal?.supplier_link ?? ""}
+                className={inputClasses}
+              />
             </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="image_alt" className={labelClasses}>
-            Texto alternativo de la imagen
-          </label>
-          <input id="image_alt" name="image_alt" type="text" defaultValue={image?.alt ?? ""} className={inputClasses} />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cost_price" className={labelClasses}>
+                Precio producto (USD, lo que pagaste)
+              </label>
+              <input
+                id="cost_price"
+                name="cost_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <label htmlFor="weight_kg" className={labelClasses}>
+                Peso (kg)
+              </label>
+              <input
+                id="weight_kg"
+                name="weight_kg"
+                type="number"
+                min="0"
+                step="0.001"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                className={inputClasses}
+              />
+            </div>
+          </div>
+
+          <dl className="grid gap-4 border-t border-primary/20 pt-4 sm:grid-cols-3">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo envío</dt>
+              <dd className="mt-1 text-sm text-foreground/80">USD {formatUsd(shippingCost)}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Peso × 45 USD</p>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo total</dt>
+              <dd className="mt-1 text-sm text-foreground/80">USD {formatUsd(totalCost)}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto + costo envío</p>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-foreground/40">Precio sugerido</dt>
+              <dd className="mt-1 text-sm font-semibold text-primary">USD {formatUsd(suggestedPrice)}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto × 1.12 + costo envío × 1.5</p>
+            </div>
+          </dl>
+          <FieldError errors={state.fieldErrors?.cost_price} />
+          <FieldError errors={state.fieldErrors?.weight_kg} />
+          <FieldError errors={state.fieldErrors?.supplier_link} />
         </div>
-      </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton label={submitLabel} />
