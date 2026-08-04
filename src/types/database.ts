@@ -333,6 +333,59 @@ export interface ProjectTimeEntry {
   created_at: ISODateString;
 }
 
+// ---------------------------------------------------------------------------
+// Autos Seleccionados (vehículos a la venta)
+// ---------------------------------------------------------------------------
+
+export interface CarImage {
+  id: UUID;
+  car_id: UUID;
+  url: string;
+  /** Miniatura generada del lado del servidor al subir el archivo. Null si la imagen se cargó pegando una URL. */
+  thumb_url: string | null;
+  alt: string;
+  position: number;
+}
+
+export type CarVideoKind = "youtube" | "file";
+
+export interface CarVideo {
+  id: UUID;
+  car_id: UUID;
+  kind: CarVideoKind;
+  youtube_url: string | null;
+  video_url: string | null;
+  position: number;
+}
+
+export interface Car {
+  id: UUID;
+  slug: string;
+  title: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number | null;
+  currency: "ARS" | "USD";
+  mileage_km: number | null;
+  engine: string | null;
+  transmission: string | null;
+  color: string | null;
+  summary: string;
+  description: string | null;
+  status: ContentStatus;
+  /** Fuera de esta ventana no aparece en /autos aunque status sea 'published' (ver RLS cars_public_read). */
+  published_from: ISODateString | null;
+  published_until: ISODateString | null;
+  cover_url: string;
+  cover_thumb_url: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  created_at: ISODateString;
+  images: CarImage[];
+  videos?: CarVideo[];
+}
+
 export type GalleryType = "sema" | "amigos" | "trabajos";
 
 export interface GalleryImage {

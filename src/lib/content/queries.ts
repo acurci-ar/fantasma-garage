@@ -2,7 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { extractPlaylistId, fetchPlaylistVideos, type PlaylistVideo } from "@/lib/youtube/playlist";
-import type { Category, Gallery, GalleryImage, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
+import type { Car, Category, Gallery, GalleryImage, Order, OrderItem, Product, Project, Service, SiteSettings, Testimonial, Video } from "@/types/database";
 import {
   FEATURED_PRODUCTS,
   GALLERIES,
@@ -309,6 +309,55 @@ export async function getAllCategoriesForAdmin(): Promise<Category[]> {
   const { data, error } = await supabase.from("categories").select("*").order("name", { ascending: true });
   if (error) return [];
   return (data ?? []) as Category[];
+}
+
+/**
+ * Autos Seleccionados visibles para quien mira ahora — la RLS
+ * `cars_public_read` (0019_selected_cars.sql) ya filtra por status y por la
+ * ventana published_from/published_until para un visitante sin sesión;
+ * staff ve todo. Sin datos seed: si Supabase no está configurado, la
+ * sección simplemente no muestra autos en vez de placeholders inventados.
+ */
+export async function getVisibleCars(): Promise<Car[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*, images:car_images(*)")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return ((data ?? []) as Car[]).map((car) => ({
+      ...car,
+      images: [...(car.images ?? [])].sort((a, b) => a.position - b.position),
+    }));
+  } catch (error) {
+    console.warn("[content] No se pudieron cargar los autos:", (error as Error).message);
+    return [];
+  }
+}
+
+/** Auto por slug, con fotos y videos, para la ficha pública (/autos/[slug]). */
+export async function getCarBySlug(slug: string): Promise<Car | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*, images:car_images(*), videos:car_videos(*)")
+      .eq("slug", slug)
+      .single();
+    if (error) throw error;
+    const car = data as Car;
+    return {
+      ...car,
+      images: [...(car.images ?? [])].sort((a, b) => a.position - b.position),
+      videos: [...(car.videos ?? [])].sort((a, b) => a.position - b.position),
+    };
+  } catch (error) {
+    console.warn("[content] No se pudo obtener el auto:", (error as Error).message);
+    return null;
+  }
 }
 
 /**

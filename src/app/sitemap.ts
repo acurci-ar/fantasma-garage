@@ -1,15 +1,16 @@
 import type { MetadataRoute } from "next";
-import { getFeaturedProducts, getFeaturedProjects } from "@/lib/content/queries";
+import { getFeaturedProducts, getFeaturedProjects, getVisibleCars } from "@/lib/content/queries";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [projects, products] = await Promise.all([getFeaturedProjects(), getFeaturedProducts()]);
+  const [projects, products, cars] = await Promise.all([getFeaturedProjects(), getFeaturedProducts(), getVisibleCars()]);
 
   const staticRoutes = [
     "",
     "/servicios",
     "/proyectos",
+    "/autos",
     "/galerias",
     "/galerias/sema",
     "/galerias/amigos",
@@ -34,5 +35,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
   }));
 
-  return [...staticRoutes, ...projectRoutes, ...productRoutes];
+  const carRoutes = cars.map((c) => ({
+    url: `${SITE_URL}/autos/${c.slug}`,
+    lastModified: new Date(),
+  }));
+
+  return [...staticRoutes, ...projectRoutes, ...productRoutes, ...carRoutes];
 }
