@@ -249,7 +249,13 @@ function sortProductImages(product: Product): Product {
   return { ...product, images: [...(product.images ?? [])].sort((a, b) => a.position - b.position) };
 }
 
-/** Selección curada para la home (FeaturedShop): productos publicados marcados como `featured` desde /admin/productos. */
+/**
+ * Selección curada para la home (FeaturedShop): productos publicados
+ * marcados como `featured` desde /admin/productos. Si todavía no se marcó
+ * ningún producto como destacado (caso típico recién agregado el campo, o
+ * un catálogo nuevo), cae a los últimos publicados en vez de mostrar la
+ * sección vacía — mejor eso que un "Tienda destacada" en blanco.
+ */
 export async function getFeaturedProducts(): Promise<Product[]> {
   return safeQuery(async () => {
     const supabase = await createClient();
@@ -261,7 +267,16 @@ export async function getFeaturedProducts(): Promise<Product[]> {
       .order("created_at", { ascending: false })
       .limit(8);
     if (error) throw error;
-    return ((data ?? []) as Product[]).map(sortProductImages);
+    if (data && data.length > 0) return (data as Product[]).map(sortProductImages);
+
+    const { data: fallback, error: fallbackError } = await supabase
+      .from("products")
+      .select("*, images:product_images(*), variants:product_variants(*), category:categories(*)")
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(4);
+    if (fallbackError) throw fallbackError;
+    return ((fallback ?? []) as Product[]).map(sortProductImages);
   }, FEATURED_PRODUCTS);
 }
 
@@ -318,14 +333,16 @@ export async function getAllCategoriesForAdmin(): Promise<Category[]> {
  * staff ve todo. Sin datos seed: si Supabase no está configurado, la
  * sección simplemente no muestra autos en vez de placeholders inventados.
  */
-export async function getVisibleCars(): Promise<Car[]> {
+export async function getVisibleCars(limit?: number): Promise<Car[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from("cars")
       .select("*, images:car_images(*)")
       .order("created_at", { ascending: false });
+    if (limit) query = query.limit(limit);
+    const { data, error } = await query;
     if (error) throw error;
     return ((data ?? []) as Car[]).map((car) => ({
       ...car,
