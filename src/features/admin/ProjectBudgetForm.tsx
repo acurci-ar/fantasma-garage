@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { upsertProjectBudget } from "@/actions/admin/projects";
 import type { ProjectBudgetActionState } from "@/actions/admin/projects";
 import type { ProjectBudget } from "@/types/database";
@@ -38,12 +39,16 @@ export function ProjectBudgetForm({ projectId, budget }: { projectId: string; bu
     <form action={formAction} className="space-y-4 rounded-sm border border-secondary/30 bg-card/40 p-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClasses}>Monto presupuestado</label>
+          <FieldLabel className={labelClasses} help="Monto total presupuestado/cotizado para el proyecto. Siempre privado." example="850000">
+            Monto presupuestado
+          </FieldLabel>
           <input name="amount" type="number" min={0} step="0.01" defaultValue={budget?.amount ?? ""} className={inputClasses} />
           {state.fieldErrors?.amount?.length ? <p className="mt-1 text-xs text-primary">{state.fieldErrors.amount[0]}</p> : null}
         </div>
         <div>
-          <label className={labelClasses}>Moneda</label>
+          <FieldLabel className={labelClasses} help="En qué moneda se expresa el presupuesto.">
+            Moneda
+          </FieldLabel>
           <select name="currency" defaultValue={budget?.currency ?? "ARS"} className={inputClasses}>
             <option value="ARS">ARS</option>
             <option value="USD">USD</option>
@@ -51,7 +56,9 @@ export function ProjectBudgetForm({ projectId, budget }: { projectId: string; bu
         </div>
       </div>
       <div>
-        <label className={labelClasses}>Notas (opcional)</label>
+        <FieldLabel className={labelClasses} help="Detalles o aclaraciones sobre el presupuesto. Uso interno." example="Incluye repuestos importados, no incluye mano de obra de tapizado">
+          Notas (opcional)
+        </FieldLabel>
         <textarea name="notes" rows={2} defaultValue={budget?.notes ?? ""} className={inputClasses} />
       </div>
       <div className="flex flex-wrap items-center gap-4">

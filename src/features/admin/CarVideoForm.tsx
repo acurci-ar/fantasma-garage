@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { CarVideoActionState } from "@/actions/admin/cars";
 import type { CarVideo } from "@/types/database";
 
@@ -48,7 +49,9 @@ export function CarVideoForm({
   return (
     <form ref={formRef} action={formAction} className="space-y-4 rounded-sm border border-secondary/30 bg-card/40 p-4">
       <div>
-        <label className={labelClasses}>Tipo</label>
+        <FieldLabel className={labelClasses} help="Elegí si el video se embebe desde YouTube o se sube/aloja como archivo propio.">
+          Tipo
+        </FieldLabel>
         <select
           name="kind"
           value={kind}
@@ -62,7 +65,13 @@ export function CarVideoForm({
 
       {kind === "youtube" ? (
         <div>
-          <label className={labelClasses}>URL de YouTube</label>
+          <FieldLabel
+            className={labelClasses}
+            help="Link completo del video en YouTube."
+            example="https://youtube.com/watch?v=dQw4w9WgXcQ"
+          >
+            URL de YouTube
+          </FieldLabel>
           <input
             name="youtube_url"
             type="text"
@@ -77,7 +86,12 @@ export function CarVideoForm({
       ) : (
         <div className="space-y-3">
           <div>
-            <label className={labelClasses}>Subir archivo (clips cortos, máx. 4MB)</label>
+            <FieldLabel
+              className={labelClasses}
+              help="Subí un video corto directamente. Por el límite de tamaño del servidor, solo sirve para clips breves."
+            >
+              Subir archivo (clips cortos, máx. 4MB)
+            </FieldLabel>
             <input
               name="file"
               type="file"
@@ -86,7 +100,13 @@ export function CarVideoForm({
             />
           </div>
           <div>
-            <label className={labelClasses}>...o pegar la URL de un video ya alojado</label>
+            <FieldLabel
+              className={labelClasses}
+              help="Alternativa a subir el archivo: pegá la URL de un video ya alojado en otro lugar."
+              example="https://mi-storage.com/videos/prueba.mp4"
+            >
+              ...o pegar la URL de un video ya alojado
+            </FieldLabel>
             <input
               name="video_url"
               type="text"

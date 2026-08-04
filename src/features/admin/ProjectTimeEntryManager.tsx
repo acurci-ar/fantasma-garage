@@ -4,6 +4,7 @@ import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { addProjectTimeEntry, deleteProjectTimeEntry } from "@/actions/admin/projects";
 import type { ProjectTimeEntryActionState } from "@/actions/admin/projects";
 import { formatDate } from "@/lib/utils/format";
@@ -86,16 +87,22 @@ export function ProjectTimeEntryManager({ projectId, entries }: { projectId: str
 
       <form ref={formRef} action={formAction} className="grid gap-3 rounded-sm border border-dashed border-secondary/40 p-4 sm:grid-cols-3">
         <div className="sm:col-span-2">
-          <label className={labelClasses}>Descripción (opcional)</label>
+          <FieldLabel className={labelClasses} help="Qué tarea se realizó durante esas horas." example="Desarme de motor">
+            Descripción (opcional)
+          </FieldLabel>
           <input name="description" type="text" placeholder="Desarme de motor..." className={inputClasses} />
         </div>
         <div>
-          <label className={labelClasses}>Horas</label>
+          <FieldLabel className={labelClasses} help="Cantidad de horas trabajadas." example="3.5">
+            Horas
+          </FieldLabel>
           <input name="hours" type="number" min={0} step="0.5" required className={inputClasses} />
           {state.fieldErrors?.hours?.length ? <p className="mt-1 text-xs text-primary">{state.fieldErrors.hours[0]}</p> : null}
         </div>
         <div>
-          <label className={labelClasses}>Fecha</label>
+          <FieldLabel className={labelClasses} help="Fecha en la que se trabajaron esas horas.">
+            Fecha
+          </FieldLabel>
           <input name="entry_date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className={inputClasses} />
         </div>
         <div className="sm:col-span-2 flex items-center gap-4">

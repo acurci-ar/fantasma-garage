@@ -53,10 +53,9 @@ export const SERVICES: Service[] = [
   },
   {
     id: "svc-2",
-    slug: "mecanica",
-    title: "Mecánica",
-    description:
-      "Puesta a punto, reconstrucción de motor y tren delantero/trasero, con repuestos originales o de calidad equivalente.",
+    slug: "adaptaciones",
+    title: "Adaptaciones",
+    description: "Motores, transmisión, aire acondicionados, frenos, suspensión, etc.",
     image_url: "/images/galeria/mecanica.webp",
     position: 2,
     status: "published",

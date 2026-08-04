@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { Order } from "@/types/database";
 import { updateOrderStatus, type OrderActionState } from "@/actions/admin/orders";
 
@@ -28,9 +29,9 @@ export function OrderStatusForm({ order }: { order: Order }) {
     <form action={formAction} className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="status" className={labelClasses}>
+          <FieldLabel htmlFor="status" className={labelClasses} help="En qué etapa logística está el pedido. Se lo puede ver el cliente.">
             Estado del pedido
-          </label>
+          </FieldLabel>
           <select id="status" name="status" defaultValue={order.status} className={inputClasses}>
             <option value="pendiente_pago">Pendiente de pago</option>
             <option value="pagado">Pagado</option>
@@ -42,9 +43,9 @@ export function OrderStatusForm({ order }: { order: Order }) {
           </select>
         </div>
         <div>
-          <label htmlFor="payment_status" className={labelClasses}>
+          <FieldLabel htmlFor="payment_status" className={labelClasses} help="Estado del pago según el medio de pago utilizado.">
             Estado del pago
-          </label>
+          </FieldLabel>
           <select id="payment_status" name="payment_status" defaultValue={order.payment_status} className={inputClasses}>
             <option value="pendiente">Pendiente</option>
             <option value="aprobado">Aprobado</option>
@@ -55,9 +56,14 @@ export function OrderStatusForm({ order }: { order: Order }) {
       </div>
 
       <div>
-        <label htmlFor="tracking_number" className={labelClasses}>
+        <FieldLabel
+          htmlFor="tracking_number"
+          className={labelClasses}
+          help="Código de seguimiento del envío, si ya se despachó."
+          example="AR123456789"
+        >
           Número de seguimiento (opcional)
-        </label>
+        </FieldLabel>
         <input
           id="tracking_number"
           name="tracking_number"
@@ -68,9 +74,14 @@ export function OrderStatusForm({ order }: { order: Order }) {
       </div>
 
       <div>
-        <label htmlFor="internal_notes" className={labelClasses}>
+        <FieldLabel
+          htmlFor="internal_notes"
+          className={labelClasses}
+          help="Anotaciones de uso interno sobre este pedido. El cliente nunca las ve."
+          example="Llamar antes de despachar, cliente pidió coordinar horario"
+        >
           Notas internas (no las ve el cliente)
-        </label>
+        </FieldLabel>
         <textarea
           id="internal_notes"
           name="internal_notes"

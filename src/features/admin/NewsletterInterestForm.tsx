@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { NewsletterInterestActionState } from "@/actions/admin/newsletterInterests";
 import type { NewsletterInterestTag } from "@/types/database";
 
@@ -40,9 +41,14 @@ export function NewsletterInterestForm({
   return (
     <form action={formAction} className="max-w-lg space-y-5">
       <div>
-        <label htmlFor="label" className={labelClasses}>
+        <FieldLabel
+          htmlFor="label"
+          className={labelClasses}
+          help="Nombre visible del interés, tal como lo ve el suscriptor en el formulario público."
+          example="Chevy Nova"
+        >
           Etiqueta
-        </label>
+        </FieldLabel>
         <input
           id="label"
           name="label"
@@ -56,9 +62,14 @@ export function NewsletterInterestForm({
       </div>
 
       <div>
-        <label htmlFor="slug" className={labelClasses}>
+        <FieldLabel
+          htmlFor="slug"
+          className={labelClasses}
+          help="Identificador interno del interés, en minúsculas y guiones."
+          example="chevy-nova"
+        >
           Slug
-        </label>
+        </FieldLabel>
         <input
           id="slug"
           name="slug"
@@ -73,9 +84,14 @@ export function NewsletterInterestForm({
       </div>
 
       <div>
-        <label htmlFor="sort_order" className={labelClasses}>
+        <FieldLabel
+          htmlFor="sort_order"
+          className={labelClasses}
+          help="Los números más bajos aparecen primero en el formulario público."
+          example="0"
+        >
           Orden
-        </label>
+        </FieldLabel>
         <input
           id="sort_order"
           name="sort_order"

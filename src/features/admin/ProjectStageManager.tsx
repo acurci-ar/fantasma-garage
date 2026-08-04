@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { DragHandle } from "@/components/ui/DragHandle";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ProjectStageRow } from "@/features/admin/ProjectStageRow";
 import { addCustomProjectStage, reorderProjectStages } from "@/actions/admin/projects";
 import type { ProjectStageActionState } from "@/actions/admin/projects";
@@ -108,9 +109,14 @@ export function ProjectStageManager({ projectId, stages }: { projectId: string; 
 
       <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-4 rounded-sm border border-dashed border-secondary/40 p-4">
         <div className="flex-1 min-w-[220px]">
-          <label htmlFor="custom-stage-name" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
+          <FieldLabel
+            htmlFor="custom-stage-name"
+            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60"
+            help="Creá un hito propio cuando ninguno del catálogo general aplica a este proyecto."
+            example="Tapizado"
+          >
             Agregar hito custom (ej. &quot;Tapizado&quot;, &quot;Electrónica&quot;)
-          </label>
+          </FieldLabel>
           <input id="custom-stage-name" name="name" type="text" required className={inputClasses} />
           {state.fieldErrors?.name?.length ? <p className="mt-1 text-xs text-primary">{state.fieldErrors.name[0]}</p> : null}
         </div>

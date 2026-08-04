@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { VideoActionState } from "@/actions/admin/videos";
 import type { Video } from "@/types/database";
 
@@ -40,9 +41,9 @@ export function VideoForm({
   return (
     <form action={formAction} className="max-w-lg space-y-5">
       <div>
-        <label htmlFor="title" className={labelClasses}>
+        <FieldLabel htmlFor="title" className={labelClasses} help="Título visible del video en la sección de Videos del sitio." example="Arranque del motor V8 restaurado">
           Título
-        </label>
+        </FieldLabel>
         <input
           id="title"
           name="title"
@@ -55,9 +56,14 @@ export function VideoForm({
       </div>
 
       <div>
-        <label htmlFor="youtube_url" className={labelClasses}>
+        <FieldLabel
+          htmlFor="youtube_url"
+          className={labelClasses}
+          help="Link completo del video en YouTube."
+          example="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        >
           URL de YouTube
-        </label>
+        </FieldLabel>
         <input
           id="youtube_url"
           name="youtube_url"
@@ -71,9 +77,14 @@ export function VideoForm({
       </div>
 
       <div>
-        <label htmlFor="position" className={labelClasses}>
+        <FieldLabel
+          htmlFor="position"
+          className={labelClasses}
+          help="Entre los destacados, los números más bajos aparecen primero en la home."
+          example="0"
+        >
           Orden
-        </label>
+        </FieldLabel>
         <input
           id="position"
           name="position"

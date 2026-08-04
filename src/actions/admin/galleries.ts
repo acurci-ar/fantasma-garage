@@ -99,7 +99,6 @@ function parseGalleryImageForm(formData: FormData) {
     url: String(formData.get("url") ?? ""),
     alt: String(formData.get("alt") ?? ""),
     caption: String(formData.get("caption") ?? ""),
-    position: String(formData.get("position") ?? "0"),
   });
 }
 
@@ -209,9 +208,23 @@ export async function addGalleryImage(
     return { status: "error", message: "Subí una imagen o pegá una URL." };
   }
 
-  const { error } = await supabase
+  // El form de alta ya no manda `position` (se arrastra para reordenar
+  // después, ver GalleryImageManager): toda foto nueva se agrega al final.
+  const { data: lastImage } = await supabase
     .from("gallery_images")
-    .insert({ ...imageData, url: finalUrl, thumb_url: finalThumbUrl, gallery_id: galleryId });
+    .select("position")
+    .eq("gallery_id", galleryId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase.from("gallery_images").insert({
+    ...imageData,
+    position: (lastImage?.position ?? -1) + 1,
+    url: finalUrl,
+    thumb_url: finalThumbUrl,
+    gallery_id: galleryId,
+  });
 
   if (error) {
     return { status: "error", message: "No pudimos agregar la imagen." };
@@ -283,4 +296,32 @@ export async function deleteGalleryImage(
   revalidatePath(`/admin/galerias/${galleryId}`);
   revalidatePath(`/galerias/${gallerySlug}`);
   return { status: "success", message: "Imagen eliminada." };
+}
+
+/**
+ * Persiste el orden de arrastre de las fotos: recibe los ids en el orden
+ * final y les asigna position 0..n-1. Con galerías de hasta ~900 fotos
+ * (ver GALLERY_PAGE_SIZE en lib/content/queries.ts), arrastrar en una lista
+ * tan larga no es cómodo — igual se deja habilitado para el caso común de
+ * reordenar unas pocas fotos recién agregadas al principio o al final.
+ */
+export async function reorderGalleryImages(
+  galleryId: string,
+  gallerySlug: string,
+  orderedIds: string[]
+): Promise<{ status: "success" | "error"; message: string }> {
+  const supabase = await createClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("gallery_images").update({ position: index }).eq("id", id))
+  );
+  const error = results.find((r) => r.error)?.error;
+
+  if (error) {
+    return { status: "error", message: "No pudimos guardar el nuevo orden." };
+  }
+
+  revalidatePath(`/admin/galerias/${galleryId}`);
+  revalidatePath(`/galerias/${gallerySlug}`);
+  return { status: "success", message: "Orden guardado." };
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { updateProjectStage, toggleProjectStage, deleteProjectStage } from "@/actions/admin/projects";
 import type { ProjectStageActionState } from "@/actions/admin/projects";
 import type { ProjectStage } from "@/types/database";
@@ -117,7 +118,9 @@ export function ProjectStageRow({ stage, projectId }: { stage: ProjectStage; pro
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className={labelClasses}>Estado</label>
+              <FieldLabel className={labelClasses} help="En qué punto está este hito de la línea de tiempo.">
+                Estado
+              </FieldLabel>
               <select name="status" defaultValue={stage.status} className={inputClasses}>
                 <option value="pendiente">Pendiente</option>
                 <option value="en_curso">En curso</option>
@@ -125,17 +128,23 @@ export function ProjectStageRow({ stage, projectId }: { stage: ProjectStage; pro
               </select>
             </div>
             <div>
-              <label className={labelClasses}>Inicio</label>
+              <FieldLabel className={labelClasses} help="Fecha en la que arrancó este hito.">
+                Inicio
+              </FieldLabel>
               <input type="date" name="started_at" defaultValue={toDateInputValue(stage.started_at)} className={inputClasses} />
             </div>
             <div>
-              <label className={labelClasses}>Fin</label>
+              <FieldLabel className={labelClasses} help="Fecha en la que terminó este hito.">
+                Fin
+              </FieldLabel>
               <input type="date" name="completed_at" defaultValue={toDateInputValue(stage.completed_at)} className={inputClasses} />
             </div>
           </div>
 
           <div>
-            <label className={labelClasses}>Notas (opcional)</label>
+            <FieldLabel className={labelClasses} help="Detalles internos sobre este hito." example="Se demoró por falta de repuesto importado">
+              Notas (opcional)
+            </FieldLabel>
             <textarea name="notes" rows={2} defaultValue={stage.notes ?? ""} className={inputClasses} />
           </div>
 

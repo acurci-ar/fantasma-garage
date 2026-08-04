@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import { slugify } from "@/lib/utils/format";
 import type { Car } from "@/types/database";
@@ -60,9 +61,14 @@ export function CarForm({
     <form action={formAction} className="max-w-2xl space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="title" className={labelClasses}>
+          <FieldLabel
+            htmlFor="title"
+            className={labelClasses}
+            help="Nombre interno para identificar este auto en el admin (no es necesariamente lo que ve el cliente)."
+            example="Chevy Nova SS 1972"
+          >
             Título interno
-          </label>
+          </FieldLabel>
           <input
             id="title"
             name="title"
@@ -76,9 +82,14 @@ export function CarForm({
           <FieldError errors={state.fieldErrors?.title} />
         </div>
         <div>
-          <label htmlFor="slug" className={labelClasses}>
+          <FieldLabel
+            htmlFor="slug"
+            className={labelClasses}
+            help="La parte final de la URL de la ficha pública. Se autocompleta desde el título; podés editarla."
+            example="chevy-nova-ss-1972"
+          >
             Slug (URL)
-          </label>
+          </FieldLabel>
           <input
             id="slug"
             name="slug"
@@ -97,23 +108,23 @@ export function CarForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="make" className={labelClasses}>
+          <FieldLabel htmlFor="make" className={labelClasses} help="Fabricante del vehículo." example="Chevrolet">
             Marca
-          </label>
+          </FieldLabel>
           <input id="make" name="make" type="text" required defaultValue={car?.make ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.make} />
         </div>
         <div>
-          <label htmlFor="model" className={labelClasses}>
+          <FieldLabel htmlFor="model" className={labelClasses} help="Modelo del vehículo." example="Nova SS">
             Modelo
-          </label>
+          </FieldLabel>
           <input id="model" name="model" type="text" required defaultValue={car?.model ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.model} />
         </div>
         <div>
-          <label htmlFor="year" className={labelClasses}>
+          <FieldLabel htmlFor="year" className={labelClasses} help="Año de fabricación del vehículo." example="1972">
             Año
-          </label>
+          </FieldLabel>
           <input
             id="year"
             name="year"
@@ -130,9 +141,14 @@ export function CarForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="price" className={labelClasses}>
+          <FieldLabel
+            htmlFor="price"
+            className={labelClasses}
+            help="Precio de venta. Si lo dejás vacío, la ficha pública muestra 'Consultar precio' en su lugar."
+            example="45000"
+          >
             Precio (opcional — vacío = &quot;Consultar&quot;)
-          </label>
+          </FieldLabel>
           <input
             id="price"
             name="price"
@@ -145,18 +161,23 @@ export function CarForm({
           <FieldError errors={state.fieldErrors?.price} />
         </div>
         <div>
-          <label htmlFor="currency" className={labelClasses}>
+          <FieldLabel htmlFor="currency" className={labelClasses} help="En qué moneda se expresa el precio.">
             Moneda
-          </label>
+          </FieldLabel>
           <select id="currency" name="currency" defaultValue={car?.currency ?? "USD"} className={inputClasses}>
             <option value="USD">USD</option>
             <option value="ARS">ARS</option>
           </select>
         </div>
         <div>
-          <label htmlFor="mileage_km" className={labelClasses}>
+          <FieldLabel
+            htmlFor="mileage_km"
+            className={labelClasses}
+            help="Kilometraje del vehículo, si se conoce."
+            example="85000"
+          >
             Kilometraje (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="mileage_km"
             name="mileage_km"
@@ -172,15 +193,15 @@ export function CarForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="engine" className={labelClasses}>
+          <FieldLabel htmlFor="engine" className={labelClasses} help="Motorización del vehículo." example="V8 350ci">
             Motor (opcional)
-          </label>
+          </FieldLabel>
           <input id="engine" name="engine" type="text" defaultValue={car?.engine ?? ""} className={inputClasses} />
         </div>
         <div>
-          <label htmlFor="transmission" className={labelClasses}>
+          <FieldLabel htmlFor="transmission" className={labelClasses} help="Tipo de caja de cambios." example="Manual 4 velocidades">
             Caja (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="transmission"
             name="transmission"
@@ -190,34 +211,44 @@ export function CarForm({
           />
         </div>
         <div>
-          <label htmlFor="color" className={labelClasses}>
+          <FieldLabel htmlFor="color" className={labelClasses} help="Color exterior del vehículo." example="Azul Lemans">
             Color (opcional)
-          </label>
+          </FieldLabel>
           <input id="color" name="color" type="text" defaultValue={car?.color ?? ""} className={inputClasses} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="summary" className={labelClasses}>
+        <FieldLabel
+          htmlFor="summary"
+          className={labelClasses}
+          help="Frase corta que se ve en la tarjeta del auto, en /autos y en la home."
+          example="Restaurado a nuevo, motor original, service al día."
+        >
           Resumen (se ve en la tarjeta de /autos)
-        </label>
+        </FieldLabel>
         <input id="summary" name="summary" type="text" required defaultValue={car?.summary ?? ""} className={inputClasses} />
         <FieldError errors={state.fieldErrors?.summary} />
       </div>
 
       <div>
-        <label htmlFor="description" className={labelClasses}>
+        <FieldLabel
+          htmlFor="description"
+          className={labelClasses}
+          help="Texto completo de la ficha pública del auto, con toda la historia y detalles."
+          example="Nova SS adquirido en 2019, restauración integral en 2022, motor reconstruido..."
+        >
           Descripción completa (ficha del auto)
-        </label>
+        </FieldLabel>
         <textarea id="description" name="description" rows={6} defaultValue={car?.description ?? ""} className={inputClasses} />
         <FieldError errors={state.fieldErrors?.description} />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="status" className={labelClasses}>
+          <FieldLabel htmlFor="status" className={labelClasses} help="Controla si el auto es visible en /autos.">
             Estado
-          </label>
+          </FieldLabel>
           <select id="status" name="status" defaultValue={car?.status ?? "draft"} className={inputClasses}>
             <option value="draft">Borrador</option>
             <option value="published">Publicado</option>
@@ -226,9 +257,14 @@ export function CarForm({
           </select>
         </div>
         <div>
-          <label htmlFor="published_from" className={labelClasses}>
+          <FieldLabel
+            htmlFor="published_from"
+            className={labelClasses}
+            help="A partir de esta fecha el auto empieza a mostrarse en /autos (aunque el estado ya sea Publicado)."
+            example="10/08/2026 09:00"
+          >
             Vigente desde (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="published_from"
             name="published_from"
@@ -239,9 +275,14 @@ export function CarForm({
           <FieldError errors={state.fieldErrors?.published_from} />
         </div>
         <div>
-          <label htmlFor="published_until" className={labelClasses}>
+          <FieldLabel
+            htmlFor="published_until"
+            className={labelClasses}
+            help="A partir de esta fecha el auto deja de mostrarse en /autos, aunque siga en estado Publicado."
+            example="30/09/2026 23:59"
+          >
             Vigente hasta (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="published_until"
             name="published_until"
@@ -275,15 +316,25 @@ export function CarForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="seo_title" className={labelClasses}>
+          <FieldLabel
+            htmlFor="seo_title"
+            className={labelClasses}
+            help="Título que usan los buscadores (Google) y al compartir el link. Si lo dejás vacío, se usa marca + modelo + año."
+            example="Chevy Nova SS 1972 restaurado — Fantasma Garage"
+          >
             SEO: título (opcional)
-          </label>
+          </FieldLabel>
           <input id="seo_title" name="seo_title" type="text" defaultValue={car?.seo_title ?? ""} className={inputClasses} />
         </div>
         <div>
-          <label htmlFor="seo_description" className={labelClasses}>
+          <FieldLabel
+            htmlFor="seo_description"
+            className={labelClasses}
+            help="Texto que aparece debajo del título en los resultados de Google y al compartir el link."
+            example="Chevy Nova SS 1972 restaurado a nuevo, motor original, listo para su próximo dueño."
+          >
             SEO: descripción (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="seo_description"
             name="seo_description"

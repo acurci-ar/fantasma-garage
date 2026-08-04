@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { GalleryForm } from "@/features/admin/GalleryForm";
 import { GalleryImageForm } from "@/features/admin/GalleryImageForm";
-import { GalleryImageRow } from "@/features/admin/GalleryImageRow";
+import { GalleryImageManager } from "@/features/admin/GalleryImageManager";
 import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
 import { updateGallery, addGalleryImage, addGalleryImages } from "@/actions/admin/galleries";
 import type { Gallery, GalleryImage } from "@/types/database";
@@ -39,14 +39,13 @@ export default async function EditGalleryPage({ params }: { params: { id: string
           Fotos de la galería ({images.length})
         </h2>
         <p className="mt-2 text-xs text-foreground/40">
-          Se muestran en la página pública de la galería, ordenadas por &quot;orden&quot;.
+          Se muestran en la página pública de la galería en este mismo orden — arrastrá desde el ícono de agarre
+          para reordenarlas. &quot;Editar&quot; despliega los datos de una foto por vez.
         </p>
 
         {images.length > 0 && (
-          <div className="mt-4 space-y-4">
-            {images.map((image) => (
-              <GalleryImageRow key={image.id} image={image} galleryId={id} gallerySlug={typedGallery.slug} />
-            ))}
+          <div className="mt-4">
+            <GalleryImageManager images={images} galleryId={id} gallerySlug={typedGallery.slug} />
           </div>
         )}
 

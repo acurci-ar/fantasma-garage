@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { addProjectDocument } from "@/actions/admin/projects";
 import type { ProjectDocumentActionState } from "@/actions/admin/projects";
 import type { ProjectExpense } from "@/types/database";
@@ -40,12 +41,16 @@ export function ProjectDocumentForm({ projectId, expenses = [] }: { projectId: s
   return (
     <form ref={formRef} action={formAction} className="space-y-4 rounded-sm border border-secondary/30 bg-card/40 p-4">
       <div>
-        <label className={labelClasses}>Nombre</label>
+        <FieldLabel className={labelClasses} help="Nombre descriptivo del documento." example="Factura taller, ficha técnica...">
+          Nombre
+        </FieldLabel>
         <input name="name" type="text" required placeholder="Factura taller, ficha técnica..." className={inputClasses} />
         {state.fieldErrors?.name?.length ? <p className="mt-1 text-xs text-primary">{state.fieldErrors.name[0]}</p> : null}
       </div>
       <div>
-        <label className={labelClasses}>Archivo (máx. 4MB)</label>
+        <FieldLabel className={labelClasses} help="El archivo a subir. Si es una imagen, se genera automáticamente una miniatura.">
+          Archivo (máx. 4MB)
+        </FieldLabel>
         <input
           name="file"
           type="file"
@@ -59,7 +64,9 @@ export function ProjectDocumentForm({ projectId, expenses = [] }: { projectId: s
       </div>
       {expenses.length > 0 && (
         <div>
-          <label className={labelClasses}>Vincular a un gasto/extra (opcional)</label>
+          <FieldLabel className={labelClasses} help="Asocia este documento a un gasto o extra ya cargado, por ejemplo su factura.">
+            Vincular a un gasto/extra (opcional)
+          </FieldLabel>
           <select name="expense_id" defaultValue="" className={inputClasses}>
             <option value="">Ninguno</option>
             {expenses.map((expense) => (

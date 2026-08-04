@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { slugify } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import type { Category, Product } from "@/types/database";
@@ -95,9 +96,14 @@ export function ProductForm({
     <form action={formAction} className="space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="name" className={labelClasses}>
+          <FieldLabel
+            htmlFor="name"
+            className={labelClasses}
+            help="El nombre del producto tal como lo va a ver el cliente en la tienda."
+            example="Kit de suspensión clásica"
+          >
             Nombre
-          </label>
+          </FieldLabel>
           <input
             id="name"
             name="name"
@@ -110,9 +116,14 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.name} />
         </div>
         <div>
-          <label htmlFor="slug" className={labelClasses}>
+          <FieldLabel
+            htmlFor="slug"
+            className={labelClasses}
+            help="La parte final de la URL del producto en la tienda. Se autocompleta desde el nombre; podés editarla."
+            example="kit-suspension-clasica"
+          >
             Slug (URL)
-          </label>
+          </FieldLabel>
           <input
             id="slug"
             name="slug"
@@ -131,9 +142,14 @@ export function ProductForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="sku" className={labelClasses}>
+          <FieldLabel
+            htmlFor="sku"
+            className={labelClasses}
+            help="Código interno único para identificar el producto en stock, pedidos y facturas. Si lo dejás vacío, se completa con el slug."
+            example="FG-SUSP-001"
+          >
             SKU
-          </label>
+          </FieldLabel>
           <input
             id="sku"
             name="sku"
@@ -146,9 +162,14 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.sku} />
         </div>
         <div>
-          <label htmlFor="status" className={labelClasses}>
+          <FieldLabel
+            htmlFor="status"
+            className={labelClasses}
+            help="Controla si el producto es visible en la tienda pública."
+            example="Publicado para que se vea, Borrador mientras lo estás cargando"
+          >
             Estado
-          </label>
+          </FieldLabel>
           <select id="status" name="status" defaultValue={product?.status ?? "draft"} className={inputClasses}>
             <option value="draft">Borrador</option>
             <option value="published">Publicado</option>
@@ -160,9 +181,14 @@ export function ProductForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="category_id" className={labelClasses}>
+          <FieldLabel
+            htmlFor="category_id"
+            className={labelClasses}
+            help="Con qué categoría se filtra este producto en /tienda."
+            example="Suspensión"
+          >
             Categoría
-          </label>
+          </FieldLabel>
           <select id="category_id" name="category_id" defaultValue={product?.category_id ?? ""} className={inputClasses}>
             <option value="">Sin categoría</option>
             {categories.map((category) => (
@@ -189,9 +215,14 @@ export function ProductForm({
       </div>
 
       <div>
-        <label htmlFor="short_description" className={labelClasses}>
+        <FieldLabel
+          htmlFor="short_description"
+          className={labelClasses}
+          help="Frase corta que se ve en la tarjeta del producto dentro del catálogo."
+          example="Kit de suspensión de alto rendimiento para muscle cars."
+        >
           Descripción corta
-        </label>
+        </FieldLabel>
         <input
           id="short_description"
           name="short_description"
@@ -203,9 +234,14 @@ export function ProductForm({
       </div>
 
       <div>
-        <label htmlFor="description" className={labelClasses}>
+        <FieldLabel
+          htmlFor="description"
+          className={labelClasses}
+          help="Texto completo que se muestra en la ficha del producto, con más detalle que la descripción corta."
+          example="Incluye amortiguadores, muelles reforzados y bujes de poliuretano. Compatible con..."
+        >
           Descripción
-        </label>
+        </FieldLabel>
         <textarea
           id="description"
           name="description"
@@ -218,9 +254,14 @@ export function ProductForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="price" className={labelClasses}>
+          <FieldLabel
+            htmlFor="price"
+            className={labelClasses}
+            help="El precio de venta al público. Si completás la info interna de costos y lo dejás vacío, se sugiere solo."
+            example="450000"
+          >
             Precio
-          </label>
+          </FieldLabel>
           <input
             id="price"
             name="price"
@@ -240,9 +281,14 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.price} />
         </div>
         <div>
-          <label htmlFor="sale_price" className={labelClasses}>
+          <FieldLabel
+            htmlFor="sale_price"
+            className={labelClasses}
+            help="Si cargás un valor acá, se muestra en la tienda con el precio normal tachado y este destacado como oferta."
+            example="380000"
+          >
             Precio de oferta (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="sale_price"
             name="sale_price"
@@ -262,9 +308,9 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.sale_price} />
         </div>
         <div>
-          <label htmlFor="currency" className={labelClasses}>
+          <FieldLabel htmlFor="currency" className={labelClasses} help="En qué moneda se expresa el precio y el precio de oferta.">
             Moneda
-          </label>
+          </FieldLabel>
           <select id="currency" name="currency" defaultValue={product?.currency ?? "ARS"} className={inputClasses}>
             <option value="ARS">ARS</option>
             <option value="USD">USD</option>
@@ -274,9 +320,14 @@ export function ProductForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="stock" className={labelClasses}>
+          <FieldLabel
+            htmlFor="stock"
+            className={labelClasses}
+            help="Cuántas unidades hay disponibles ahora mismo. En 0, la tienda lo muestra como 'A pedido'."
+            example="6"
+          >
             Stock
-          </label>
+          </FieldLabel>
           <input
             id="stock"
             name="stock"
@@ -290,9 +341,14 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.stock} />
         </div>
         <div>
-          <label htmlFor="low_stock_threshold" className={labelClasses}>
+          <FieldLabel
+            htmlFor="low_stock_threshold"
+            className={labelClasses}
+            help="Por debajo de esta cantidad, el stock se resalta en el listado del admin como bajo."
+            example="2"
+          >
             Umbral de stock bajo
-          </label>
+          </FieldLabel>
           <input
             id="low_stock_threshold"
             name="low_stock_threshold"
@@ -321,9 +377,14 @@ export function ProductForm({
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="supplier_name" className={labelClasses}>
+              <FieldLabel
+                htmlFor="supplier_name"
+                className={labelClasses}
+                help="A quién le compraste este producto."
+                example="AutoParts USA"
+              >
                 Proveedor
-              </label>
+              </FieldLabel>
               <input
                 id="supplier_name"
                 name="supplier_name"
@@ -333,9 +394,14 @@ export function ProductForm({
               />
             </div>
             <div>
-              <label htmlFor="supplier_link" className={labelClasses}>
+              <FieldLabel
+                htmlFor="supplier_link"
+                className={labelClasses}
+                help="Link a la publicación o página del proveedor, para volver a encontrarla rápido."
+                example="https://www.ebay.com/itm/..."
+              >
                 Link
-              </label>
+              </FieldLabel>
               <input
                 id="supplier_link"
                 name="supplier_link"
@@ -349,9 +415,14 @@ export function ProductForm({
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <label htmlFor="cost_price" className={labelClasses}>
+              <FieldLabel
+                htmlFor="cost_price"
+                className={labelClasses}
+                help="Lo que efectivamente pagaste por el producto, sin envío. Con esto y el peso se calcula el costo total y el precio sugerido."
+                example="120"
+              >
                 Precio producto (USD, lo que pagaste)
-              </label>
+              </FieldLabel>
               <input
                 id="cost_price"
                 name="cost_price"
@@ -364,9 +435,14 @@ export function ProductForm({
               />
             </div>
             <div>
-              <label htmlFor="weight_kg" className={labelClasses}>
+              <FieldLabel
+                htmlFor="weight_kg"
+                className={labelClasses}
+                help="Peso del producto, usado para calcular el costo de envío (peso × 45 USD)."
+                example="3.5"
+              >
                 Peso (kg)
-              </label>
+              </FieldLabel>
               <input
                 id="weight_kg"
                 name="weight_kg"

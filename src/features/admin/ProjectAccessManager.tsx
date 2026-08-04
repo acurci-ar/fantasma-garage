@@ -4,6 +4,7 @@ import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { grantProjectAccess, revokeProjectAccess } from "@/actions/admin/projects";
 import type { ProjectAccessActionState } from "@/actions/admin/projects";
 import type { ProjectAccess } from "@/types/database";
@@ -88,9 +89,14 @@ export function ProjectAccessManager({ projectId, access }: { projectId: string;
 
       <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-4">
         <div className="flex-1 min-w-[220px]">
-          <label htmlFor="email" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
+          <FieldLabel
+            htmlFor="email"
+            className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60"
+            help="El acceso queda guardado por email aunque la persona todavía no tenga cuenta; se activa apenas se registra con ese email."
+            example="cliente@ejemplo.com"
+          >
             Email a invitar
-          </label>
+          </FieldLabel>
           <input id="email" name="email" type="email" required className={inputClasses} />
           {state.fieldErrors?.email?.length ? (
             <p className="mt-1 text-xs text-primary">{state.fieldErrors.email[0]}</p>

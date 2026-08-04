@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { resizeImageForUpload } from "@/lib/utils/clientImageResize";
 import { MAX_BULK_BATCH_BYTES } from "@/lib/utils/image";
 import type { BulkUploadActionState } from "@/lib/validation/admin/bulkUpload";
@@ -127,9 +128,12 @@ export function BulkImageUploadForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-sm border border-secondary/30 bg-card/40 p-4">
       <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
+        <FieldLabel
+          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60"
+          help="Seleccioná varias fotos juntas; se agregan sin epígrafe ni texto alternativo, para completar después foto por foto."
+        >
           Subir varias fotos a la vez
-        </label>
+        </FieldLabel>
         <input
           ref={inputRef}
           type="file"

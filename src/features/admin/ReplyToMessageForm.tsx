@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { replyToContactMessage, type ContactReplyActionState } from "@/actions/admin/messages";
 
 const initialState: ContactReplyActionState = { status: "idle", message: "" };
@@ -25,9 +26,14 @@ export function ReplyToMessageForm({ messageId }: { messageId: string }) {
   return (
     <form action={formAction} className="space-y-4">
       <div>
-        <label htmlFor="body" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
+        <FieldLabel
+          htmlFor="body"
+          className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60"
+          help="El texto que le llega por email al cliente como respuesta a su mensaje."
+          example="¡Hola! Sí, tenemos ese repuesto en stock, te escribimos por WhatsApp para coordinar."
+        >
           Tu respuesta
-        </label>
+        </FieldLabel>
         <textarea
           id="body"
           name="body"

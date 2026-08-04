@@ -26,7 +26,7 @@ on conflict (key) do nothing;
 
 insert into public.services (slug, title, description, image_url, position, status) values
   ('restauracion-integral', 'Restauración integral', 'Recuperamos el vehículo completo, de chasis a terminación, con criterio de preservación histórica y nivel de colección.', '/images/galeria/detalles.webp', 1, 'published'),
-  ('mecanica', 'Mecánica', 'Puesta a punto, reconstrucción de motor y tren delantero/trasero, con repuestos originales o de calidad equivalente.', '/images/galeria/mecanica.webp', 2, 'published'),
+  ('adaptaciones', 'Adaptaciones', 'Motores, transmisión, aire acondicionados, frenos, suspensión, etc.', '/images/galeria/mecanica.webp', 2, 'published'),
   ('chapa-y-pintura', 'Chapa y pintura', 'Trabajo artesanal de chapa, alineación de paneles y pintura con acabados de exhibición.', '/images/galeria/chapa.webp', 3, 'published')
 on conflict (slug) do nothing;
 

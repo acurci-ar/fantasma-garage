@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { slugify } from "@/lib/utils/format";
 import type { CategoryActionState } from "@/actions/admin/categories";
 import type { Category } from "@/types/database";
@@ -49,9 +50,14 @@ export function CategoryForm({
   return (
     <form action={formAction} className="max-w-lg space-y-5">
       <div>
-        <label htmlFor="name" className={labelClasses}>
+        <FieldLabel
+          htmlFor="name"
+          className={labelClasses}
+          help="El nombre de la categoría tal como se ve en el filtro de la tienda."
+          example="Suspensión"
+        >
           Nombre
-        </label>
+        </FieldLabel>
         <input
           id="name"
           name="name"
@@ -66,9 +72,14 @@ export function CategoryForm({
       </div>
 
       <div>
-        <label htmlFor="slug" className={labelClasses}>
+        <FieldLabel
+          htmlFor="slug"
+          className={labelClasses}
+          help="Identificador interno de la categoría, en minúsculas y guiones. Se autocompleta desde el nombre."
+          example="suspension"
+        >
           Slug
-        </label>
+        </FieldLabel>
         <input
           id="slug"
           name="slug"
@@ -85,9 +96,14 @@ export function CategoryForm({
       </div>
 
       <div>
-        <label htmlFor="description" className={labelClasses}>
+        <FieldLabel
+          htmlFor="description"
+          className={labelClasses}
+          help="Texto opcional para uso interno o futuras páginas de categoría; no aparece en el filtro de la tienda."
+          example="Amortiguadores, muelles, bujes y accesorios de suspensión."
+        >
           Descripción (opcional)
-        </label>
+        </FieldLabel>
         <textarea
           id="description"
           name="description"
@@ -99,9 +115,13 @@ export function CategoryForm({
       </div>
 
       <div>
-        <label htmlFor="status" className={labelClasses}>
+        <FieldLabel
+          htmlFor="status"
+          className={labelClasses}
+          help="Solo las categorías Publicadas aparecen como filtro en /tienda."
+        >
           Estado
-        </label>
+        </FieldLabel>
         <select id="status" name="status" defaultValue={category?.status ?? "published"} className={inputClasses}>
           <option value="published">Publicada (aparece en el filtro de la tienda)</option>
           <option value="draft">Borrador</option>

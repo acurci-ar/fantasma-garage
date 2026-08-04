@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { NewsletterSubscriberActionState } from "@/actions/admin/newsletterSubscribers";
 import type { NewsletterInterestTag, NewsletterSubscriber } from "@/types/database";
 
@@ -43,9 +44,9 @@ export function NewsletterSubscriberForm({
   return (
     <form action={formAction} className="max-w-lg space-y-5">
       <div>
-        <label htmlFor="email" className={labelClasses}>
+        <FieldLabel htmlFor="email" className={labelClasses} help="Dirección de email del suscriptor." example="cliente@ejemplo.com">
           Email
-        </label>
+        </FieldLabel>
         <input
           id="email"
           name="email"
@@ -58,9 +59,9 @@ export function NewsletterSubscriberForm({
       </div>
 
       <div>
-        <label htmlFor="status" className={labelClasses}>
+        <FieldLabel htmlFor="status" className={labelClasses} help="Los suscriptores 'Baja' no reciben envíos del newsletter.">
           Estado
-        </label>
+        </FieldLabel>
         <select id="status" name="status" defaultValue={subscriber?.status ?? "activo"} className={inputClasses}>
           <option value="activo">Activo</option>
           <option value="baja">Baja</option>

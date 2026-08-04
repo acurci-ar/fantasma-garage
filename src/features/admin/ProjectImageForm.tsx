@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import type { ProjectImageActionState } from "@/actions/admin/projects";
 import type { ProjectImage, ProjectStage } from "@/types/database";
@@ -64,12 +65,23 @@ export function ProjectImageForm({
       />
 
       <div>
-        <label className={labelClasses}>Texto alternativo</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Descripción de la imagen para lectores de pantalla y buscadores. No se ve en la página."
+          example="Vista del chasis antes de la restauración"
+        >
+          Texto alternativo
+        </FieldLabel>
         <input name="alt" type="text" defaultValue={image?.alt ?? ""} className={inputClasses} />
       </div>
 
       <div>
-        <label className={labelClasses}>Hito de la línea de tiempo (opcional)</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Asocia la foto a una etapa de la línea de tiempo del proyecto, si corresponde."
+        >
+          Hito de la línea de tiempo (opcional)
+        </FieldLabel>
         <select name="stage_id" defaultValue={image?.stage_id ?? ""} className={inputClasses}>
           <option value="">Sin asociar</option>
           {stages.map((stage) => (
@@ -88,7 +100,12 @@ export function ProjectImageForm({
       <input type="hidden" name="stage" defaultValue={image?.stage ?? ""} />
 
       <div>
-        <label className={labelClasses}>Visibilidad</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Controla si esta foto se ve en la ficha pública del proyecto (si el proyecto en sí es público)."
+        >
+          Visibilidad
+        </FieldLabel>
         <select name="visibility" defaultValue={image?.visibility ?? "public"} className={inputClasses}>
           <option value="public">Pública</option>
           <option value="private">Privada</option>

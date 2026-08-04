@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import type { GalleryImageActionState } from "@/actions/admin/galleries";
 import type { GalleryImage } from "@/types/database";
@@ -59,20 +60,28 @@ export function GalleryImageForm({
       />
 
       <div>
-        <label className={labelClasses}>Texto alternativo</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Descripción de la imagen para lectores de pantalla y buscadores. No se ve en la página."
+          example="Detalle del tablero restaurado"
+        >
+          Texto alternativo
+        </FieldLabel>
         <input name="alt" type="text" defaultValue={image?.alt ?? ""} className={inputClasses} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className={labelClasses}>Epígrafe (opcional)</label>
-          <input name="caption" type="text" defaultValue={image?.caption ?? ""} className={inputClasses} />
-        </div>
-        <div>
-          <label className={labelClasses}>Orden</label>
-          <input name="position" type="number" min={0} defaultValue={image?.position ?? 0} className={inputClasses} />
-        </div>
+      <div>
+        <FieldLabel
+          className={labelClasses}
+          help="Texto corto que se muestra junto a la foto en la galería pública."
+          example="Antes de la restauración"
+        >
+          Epígrafe (opcional)
+        </FieldLabel>
+        <input name="caption" type="text" defaultValue={image?.caption ?? ""} className={inputClasses} />
       </div>
+
+      {/* El orden ya no se edita acá: se arrastra directamente en la lista (ver GalleryImageManager). */}
 
       <div className="flex flex-wrap items-center gap-4">
         <SubmitButton label={submitLabel} />

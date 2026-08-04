@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import { slugify } from "@/lib/utils/format";
 import type { Project } from "@/types/database";
@@ -51,9 +52,14 @@ export function ProjectForm({
     <form action={formAction} className="max-w-2xl space-y-6">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="title" className={labelClasses}>
+          <FieldLabel
+            htmlFor="title"
+            className={labelClasses}
+            help="Nombre interno para identificar este proyecto en el admin (no es necesariamente lo que ve el cliente)."
+            example="Restauración Ford Falcon 1978"
+          >
             Título interno
-          </label>
+          </FieldLabel>
           <input
             id="title"
             name="title"
@@ -66,9 +72,14 @@ export function ProjectForm({
           <FieldError errors={state.fieldErrors?.title} />
         </div>
         <div>
-          <label htmlFor="slug" className={labelClasses}>
+          <FieldLabel
+            htmlFor="slug"
+            className={labelClasses}
+            help="La parte final de la URL de la ficha pública. Se autocompleta desde el título; podés editarla."
+            example="restauracion-ford-falcon-1978"
+          >
             Slug (URL)
-          </label>
+          </FieldLabel>
           <input
             id="slug"
             name="slug"
@@ -87,23 +98,23 @@ export function ProjectForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="make" className={labelClasses}>
+          <FieldLabel htmlFor="make" className={labelClasses} help="Fabricante del vehículo." example="Ford">
             Marca
-          </label>
+          </FieldLabel>
           <input id="make" name="make" type="text" required defaultValue={project?.make ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.make} />
         </div>
         <div>
-          <label htmlFor="model" className={labelClasses}>
+          <FieldLabel htmlFor="model" className={labelClasses} help="Modelo del vehículo." example="Falcon">
             Modelo
-          </label>
+          </FieldLabel>
           <input id="model" name="model" type="text" required defaultValue={project?.model ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.model} />
         </div>
         <div>
-          <label htmlFor="year" className={labelClasses}>
+          <FieldLabel htmlFor="year" className={labelClasses} help="Año de fabricación del vehículo." example="1978">
             Año
-          </label>
+          </FieldLabel>
           <input
             id="year"
             name="year"
@@ -120,23 +131,28 @@ export function ProjectForm({
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="vin" className={labelClasses}>
+          <FieldLabel
+            htmlFor="vin"
+            className={labelClasses}
+            help="Número de identificación del vehículo (chasis), si se conoce."
+            example="1FAPP6242WH123456"
+          >
             VIN (opcional)
-          </label>
+          </FieldLabel>
           <input id="vin" name="vin" type="text" defaultValue={project?.vin ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.vin} />
         </div>
         <div>
-          <label htmlFor="engine" className={labelClasses}>
+          <FieldLabel htmlFor="engine" className={labelClasses} help="Motorización del vehículo." example="6 cilindros 3.6L">
             Motor (opcional)
-          </label>
+          </FieldLabel>
           <input id="engine" name="engine" type="text" defaultValue={project?.engine ?? ""} className={inputClasses} />
           <FieldError errors={state.fieldErrors?.engine} />
         </div>
         <div>
-          <label htmlFor="transmission" className={labelClasses}>
+          <FieldLabel htmlFor="transmission" className={labelClasses} help="Tipo de caja de cambios." example="Manual 3 velocidades">
             Caja (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="transmission"
             name="transmission"
@@ -149,9 +165,14 @@ export function ProjectForm({
       </div>
 
       <div>
-        <label htmlFor="client_name" className={labelClasses}>
+        <FieldLabel
+          htmlFor="client_name"
+          className={labelClasses}
+          help="Nombre del cliente dueño del vehículo. Uso interno únicamente, nunca se muestra en la ficha pública."
+          example="Juan Pérez"
+        >
           Cliente (opcional — siempre privado, nunca se muestra en la ficha pública)
-        </label>
+        </FieldLabel>
         <input
           id="client_name"
           name="client_name"
@@ -163,26 +184,36 @@ export function ProjectForm({
       </div>
 
       <div>
-        <label htmlFor="summary" className={labelClasses}>
+        <FieldLabel
+          htmlFor="summary"
+          className={labelClasses}
+          help="Frase corta que se ve en la tarjeta del proyecto, en /proyectos y en la home."
+          example="Restauración integral de chapa, motor y tapizados."
+        >
           Resumen (se ve en la tarjeta de /proyectos)
-        </label>
+        </FieldLabel>
         <input id="summary" name="summary" type="text" required defaultValue={project?.summary ?? ""} className={inputClasses} />
         <FieldError errors={state.fieldErrors?.summary} />
       </div>
 
       <div>
-        <label htmlFor="story" className={labelClasses}>
+        <FieldLabel
+          htmlFor="story"
+          className={labelClasses}
+          help="Texto completo de la ficha pública del proyecto, con toda la historia y el proceso de trabajo."
+          example="El auto llegó con el motor fundido y la chapa muy dañada. Se hizo una restauración completa en 8 meses..."
+        >
           Historia completa (ficha del proyecto)
-        </label>
+        </FieldLabel>
         <textarea id="story" name="story" rows={6} defaultValue={project?.story ?? ""} className={inputClasses} />
         <FieldError errors={state.fieldErrors?.story} />
       </div>
 
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
-          <label htmlFor="status" className={labelClasses}>
+          <FieldLabel htmlFor="status" className={labelClasses} help="En qué etapa está el proyecto de restauración.">
             Etapa
-          </label>
+          </FieldLabel>
           <select id="status" name="status" defaultValue={project?.status ?? "en_curso"} className={inputClasses}>
             <option value="en_curso">En curso</option>
             <option value="finalizado">Finalizado</option>
@@ -190,9 +221,13 @@ export function ProjectForm({
           </select>
         </div>
         <div>
-          <label htmlFor="visibility" className={labelClasses}>
+          <FieldLabel
+            htmlFor="visibility"
+            className={labelClasses}
+            help="Controla quién puede ver la ficha del proyecto en el sitio público."
+          >
             Visibilidad
-          </label>
+          </FieldLabel>
           <select id="visibility" name="visibility" defaultValue={project?.visibility ?? "public"} className={inputClasses}>
             <option value="public">Público</option>
             <option value="private">Privado</option>
@@ -228,15 +263,25 @@ export function ProjectForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="seo_title" className={labelClasses}>
+          <FieldLabel
+            htmlFor="seo_title"
+            className={labelClasses}
+            help="Título que usan los buscadores (Google) y al compartir el link. Si lo dejás vacío, se usa marca + modelo + año."
+            example="Restauración Ford Falcon 1978 — Fantasma Garage"
+          >
             SEO: título (opcional)
-          </label>
+          </FieldLabel>
           <input id="seo_title" name="seo_title" type="text" defaultValue={project?.seo_title ?? ""} className={inputClasses} />
         </div>
         <div>
-          <label htmlFor="seo_description" className={labelClasses}>
+          <FieldLabel
+            htmlFor="seo_description"
+            className={labelClasses}
+            help="Texto que aparece debajo del título en los resultados de Google y al compartir el link."
+            example="Restauración completa de un Ford Falcon 1978, motor y chapa a nuevo."
+          >
             SEO: descripción (opcional)
-          </label>
+          </FieldLabel>
           <input
             id="seo_description"
             name="seo_description"

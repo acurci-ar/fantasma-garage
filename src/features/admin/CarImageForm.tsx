@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import type { CarImageActionState } from "@/actions/admin/cars";
 import type { CarImage } from "@/types/database";
@@ -55,7 +56,13 @@ export function CarImageForm({
       />
 
       <div>
-        <label className={labelClasses}>Texto alternativo</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Descripción de la imagen para lectores de pantalla y buscadores. No se ve en la página."
+          example="Vista trasera 3/4 con el color original"
+        >
+          Texto alternativo
+        </FieldLabel>
         <input name="alt" type="text" defaultValue={image?.alt ?? ""} className={inputClasses} />
       </div>
 

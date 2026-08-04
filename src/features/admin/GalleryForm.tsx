@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { ImageUploadField } from "@/features/admin/ImageUploadField";
 import type { Gallery } from "@/types/database";
 import type { GalleryActionState } from "@/actions/admin/galleries";
@@ -39,17 +40,27 @@ export function GalleryForm({
   return (
     <form action={formAction} className="max-w-2xl space-y-6">
       <div>
-        <label htmlFor="title" className={labelClasses}>
+        <FieldLabel
+          htmlFor="title"
+          className={labelClasses}
+          help="Título de la galería, visible en /galerias."
+          example="Trabajos"
+        >
           Título
-        </label>
+        </FieldLabel>
         <input id="title" name="title" type="text" required defaultValue={gallery.title} className={inputClasses} />
         <FieldError errors={state.fieldErrors?.title} />
       </div>
 
       <div>
-        <label htmlFor="description" className={labelClasses}>
+        <FieldLabel
+          htmlFor="description"
+          className={labelClasses}
+          help="Bajada que se muestra debajo del título de la galería."
+          example="Restauraciones y trabajos completados en el taller."
+        >
           Descripción
-        </label>
+        </FieldLabel>
         <textarea
           id="description"
           name="description"
@@ -61,9 +72,9 @@ export function GalleryForm({
       </div>
 
       <div>
-        <label htmlFor="status" className={labelClasses}>
+        <FieldLabel htmlFor="status" className={labelClasses} help="Solo 'Publicado' se muestra en /galerias y la home.">
           Estado
-        </label>
+        </FieldLabel>
         <select id="status" name="status" defaultValue={gallery.status} className={inputClasses}>
           <option value="draft">Borrador</option>
           <option value="published">Publicado</option>

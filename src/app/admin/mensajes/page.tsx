@@ -105,7 +105,11 @@ export default async function AdminMessagesPage() {
               return {
                 key,
                 label,
-                unreadCount: inStatus.filter((message) => !message.read_at).length,
+                // Un mensaje Resuelto no debería seguir destacando la solapa
+                // aunque nadie haya abierto el detalle después de resolverlo
+                // (read_at puede seguir null si se resolvió con los botones
+                // rápidos de la lista, sin entrar a /admin/mensajes/[id]).
+                unreadCount: key === "resuelto" ? 0 : inStatus.filter((message) => !message.read_at).length,
                 content: <MessageList messages={inStatus} />,
               };
             })}

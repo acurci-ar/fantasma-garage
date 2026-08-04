@@ -18,11 +18,6 @@ export const galleryImageSchema = z.object({
   url: urlOrPath,
   alt: z.string().trim().max(200),
   caption: z.string().trim().max(300),
-  position: z
-    .string()
-    .trim()
-    .refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) >= 0), "El orden debe ser un número entero.")
-    .transform((v) => (v === "" ? 0 : Number(v))),
 });
 
 export type GalleryImageFormValues = z.infer<typeof galleryImageSchema>;

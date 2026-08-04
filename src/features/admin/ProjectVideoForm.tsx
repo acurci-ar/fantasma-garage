@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import type { ProjectVideoActionState } from "@/actions/admin/projects";
 import type { ProjectStage, ProjectVideo } from "@/types/database";
 
@@ -54,7 +55,9 @@ export function ProjectVideoForm({
   return (
     <form ref={formRef} action={formAction} className="space-y-4 rounded-sm border border-secondary/30 bg-card/40 p-4">
       <div>
-        <label className={labelClasses}>Tipo</label>
+        <FieldLabel className={labelClasses} help="Elegí si el video se embebe desde YouTube o se sube/aloja como archivo propio.">
+          Tipo
+        </FieldLabel>
         <select
           name="kind"
           value={kind}
@@ -68,7 +71,13 @@ export function ProjectVideoForm({
 
       {kind === "youtube" ? (
         <div>
-          <label className={labelClasses}>URL de YouTube</label>
+          <FieldLabel
+            className={labelClasses}
+            help="Link completo del video en YouTube."
+            example="https://youtube.com/watch?v=dQw4w9WgXcQ"
+          >
+            URL de YouTube
+          </FieldLabel>
           <input
             name="youtube_url"
             type="text"
@@ -83,7 +92,12 @@ export function ProjectVideoForm({
       ) : (
         <div className="space-y-3">
           <div>
-            <label className={labelClasses}>Subir archivo (clips cortos, máx. 4MB)</label>
+            <FieldLabel
+              className={labelClasses}
+              help="Subí un video corto directamente. Por el límite de tamaño del servidor, solo sirve para clips breves."
+            >
+              Subir archivo (clips cortos, máx. 4MB)
+            </FieldLabel>
             <input
               name="file"
               type="file"
@@ -92,7 +106,13 @@ export function ProjectVideoForm({
             />
           </div>
           <div>
-            <label className={labelClasses}>...o pegar la URL de un video ya alojado</label>
+            <FieldLabel
+              className={labelClasses}
+              help="Alternativa a subir el archivo: pegá la URL de un video ya alojado en otro lugar."
+              example="https://mi-storage.com/videos/prueba.mp4"
+            >
+              ...o pegar la URL de un video ya alojado
+            </FieldLabel>
             <input
               name="video_url"
               type="text"
@@ -109,7 +129,12 @@ export function ProjectVideoForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClasses}>Hito de la línea de tiempo (opcional)</label>
+          <FieldLabel
+            className={labelClasses}
+            help="Asocia el video a una etapa de la línea de tiempo del proyecto, si corresponde."
+          >
+            Hito de la línea de tiempo (opcional)
+          </FieldLabel>
           <select name="stage_id" defaultValue={video?.stage_id ?? ""} className={inputClasses}>
             <option value="">Sin asociar</option>
             {stages.map((stage) => (
@@ -120,13 +145,20 @@ export function ProjectVideoForm({
           </select>
         </div>
         <div>
-          <label className={labelClasses}>Orden</label>
+          <FieldLabel className={labelClasses} help="Posición del video en la lista. Los números más bajos aparecen primero." example="0">
+            Orden
+          </FieldLabel>
           <input name="position" type="number" min={0} defaultValue={video?.position ?? 0} className={inputClasses} />
         </div>
       </div>
 
       <div>
-        <label className={labelClasses}>Visibilidad</label>
+        <FieldLabel
+          className={labelClasses}
+          help="Controla si este video se ve en la ficha pública del proyecto (si el proyecto en sí es público)."
+        >
+          Visibilidad
+        </FieldLabel>
         <select name="visibility" defaultValue={video?.visibility ?? "public"} className={inputClasses}>
           <option value="public">Pública</option>
           <option value="private">Privada</option>

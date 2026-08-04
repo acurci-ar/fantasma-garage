@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { DocumentThumb } from "@/components/ui/DocumentThumb";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { addProjectExpense, deleteProjectExpense } from "@/actions/admin/projects";
 import type { ProjectExpenseActionState } from "@/actions/admin/projects";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -145,41 +146,55 @@ export function ProjectExpenseManager({
 
       <form ref={formRef} action={formAction} className="grid gap-3 rounded-sm border border-dashed border-secondary/40 p-4 sm:grid-cols-2">
         <div>
-          <label className={labelClasses}>Descripción</label>
+          <FieldLabel className={labelClasses} help="Qué es el gasto, en pocas palabras." example="Repuestos de suspensión">
+            Descripción
+          </FieldLabel>
           <input name="description" type="text" required className={inputClasses} />
           {state.fieldErrors?.description?.length ? (
             <p className="mt-1 text-xs text-primary">{state.fieldErrors.description[0]}</p>
           ) : null}
         </div>
         <div>
-          <label className={labelClasses}>Tipo</label>
+          <FieldLabel className={labelClasses} help="'Extra' marca un gasto no previsto en el presupuesto inicial.">
+            Tipo
+          </FieldLabel>
           <select name="kind" defaultValue="gasto" className={inputClasses}>
             <option value="gasto">Gasto</option>
             <option value="extra">Extra (no previsto)</option>
           </select>
         </div>
         <div>
-          <label className={labelClasses}>Monto</label>
+          <FieldLabel className={labelClasses} help="Monto del gasto." example="45000">
+            Monto
+          </FieldLabel>
           <input name="amount" type="number" min={0} step="0.01" required className={inputClasses} />
           {state.fieldErrors?.amount?.length ? <p className="mt-1 text-xs text-primary">{state.fieldErrors.amount[0]}</p> : null}
         </div>
         <div>
-          <label className={labelClasses}>Moneda</label>
+          <FieldLabel className={labelClasses} help="En qué moneda se registra este gasto.">
+            Moneda
+          </FieldLabel>
           <select name="currency" defaultValue="ARS" className={inputClasses}>
             <option value="ARS">ARS</option>
             <option value="USD">USD</option>
           </select>
         </div>
         <div>
-          <label className={labelClasses}>Fecha</label>
+          <FieldLabel className={labelClasses} help="Fecha en que se realizó el gasto.">
+            Fecha
+          </FieldLabel>
           <input name="expense_date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className={inputClasses} />
         </div>
         <div>
-          <label className={labelClasses}>Categoría (opcional)</label>
+          <FieldLabel className={labelClasses} help="Clasificación libre para agrupar gastos similares." example="Repuestos, mano de obra">
+            Categoría (opcional)
+          </FieldLabel>
           <input name="category" type="text" placeholder="Repuestos, mano de obra..." className={inputClasses} />
         </div>
         <div className="sm:col-span-2">
-          <label className={labelClasses}>Factura/comprobante (opcional, máx. 4MB)</label>
+          <FieldLabel className={labelClasses} help="Comprobante del gasto (foto o PDF). Se guarda también en Documentos.">
+            Factura/comprobante (opcional, máx. 4MB)
+          </FieldLabel>
           <input
             name="invoice"
             type="file"

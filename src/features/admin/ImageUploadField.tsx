@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { FieldLabel } from "@/components/ui/FieldLabel";
 import { formatBytes, isImageTooHeavy, exceedsHardLimit, needsUnoptimizedImage, MAX_PRODUCT_IMAGE_BYTES } from "@/lib/utils/image";
 import { resizeImageForUpload } from "@/lib/utils/clientImageResize";
 
@@ -120,9 +121,13 @@ export function ImageUploadField({
       </span>
 
       <div>
-        <label htmlFor={fileFieldName} className={labelClasses}>
+        <FieldLabel
+          htmlFor={fileFieldName}
+          className={labelClasses}
+          help="Elegí una foto desde tu computadora o celular. Se achica automáticamente si pesa mucho."
+        >
           Subir un archivo
-        </label>
+        </FieldLabel>
         <input
           id={fileFieldName}
           name={fileFieldName}
@@ -137,9 +142,14 @@ export function ImageUploadField({
       </div>
 
       <div>
-        <label htmlFor={urlFieldName} className={labelClasses}>
+        <FieldLabel
+          htmlFor={urlFieldName}
+          className={labelClasses}
+          help="Alternativa a subir un archivo: pegá una URL o ruta ya existente."
+          example="/images/ejemplo.webp"
+        >
           {urlLabel}
-        </label>
+        </FieldLabel>
         <input
           ref={urlInputRef}
           id={urlFieldName}
