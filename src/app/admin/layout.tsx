@@ -6,11 +6,11 @@ import { AdminSignOutButton } from "@/features/admin/AdminSignOutButton";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/autos", label: "Autos Seleccionados" },
   { href: "/admin/productos", label: "Productos" },
   { href: "/admin/categorias", label: "Categorías" },
   { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/proyectos", label: "Proyectos" },
-  { href: "/admin/autos", label: "Autos Seleccionados" },
   { href: "/admin/galerias", label: "Galerías" },
   { href: "/admin/mensajes", label: "Mensajes" },
   { href: "/admin/videos", label: "Videos" },
