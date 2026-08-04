@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isProtectedPath, loginRedirectParams } from "@/lib/utils/routeProtection";
 
 /**
  * Refresca la sesión de Supabase en cada request y protege /admin a nivel
@@ -36,16 +37,17 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtected =
-    pathname.startsWith("/admin") || pathname.startsWith("/cuenta") || pathname.startsWith("/checkout");
 
-  if (isProtected && !user) {
+  if (isProtectedPath(pathname) && !user) {
     const loginUrl = new URL("/login", request.url);
     // En /checkout forzamos login antes de dejar pasar (sin checkout de
     // invitado): guardamos a dónde volver para no perder el carrito de
-    // vista una vez que inicie sesión o confirme el registro.
-    if (pathname.startsWith("/checkout")) {
-      loginUrl.searchParams.set("redirect", "/checkout");
+    // vista una vez que inicie sesión o confirme el registro. La decisión
+    // de qué params van (isProtectedPath / loginRedirectParams) es pura y
+    // vive en lib/utils/routeProtection.ts — testeada en
+    // tests/routeProtection.test.ts.
+    for (const [key, value] of Object.entries(loginRedirectParams(pathname))) {
+      loginUrl.searchParams.set(key, value);
     }
     return NextResponse.redirect(loginUrl);
   }

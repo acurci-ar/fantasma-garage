@@ -6,6 +6,7 @@ import { productSchema, productInternalSchema } from "@/lib/validation/product";
 import { productImageSchema } from "@/lib/validation/admin/productImage";
 import { createClient } from "@/lib/supabase/server";
 import { uploadImageToBucket } from "@/lib/supabase/upload";
+import { computeSuggestedPrice, skuConflictFieldErrors } from "@/lib/utils/productPricing";
 
 export interface ProductActionState {
   status: "idle" | "success" | "error";
@@ -63,18 +64,8 @@ function parseProductInternalForm(formData: FormData) {
   });
 }
 
-/** Precio Sugerido = cost_price × 1.12 + (weight_kg × 45) × 1.5 — mismo cálculo que la columna generada de product_internal_info (ver 0018_products_catalog_extras.sql), para el fallback server-side cuando el precio llega vacío. */
-function computeSuggestedPrice(costPrice: number | null, weightKg: number | null): number {
-  const shipping = (weightKg ?? 0) * 45;
-  return Math.round(((costPrice ?? 0) * 1.12 + shipping * 1.5) * 100) / 100;
-}
-
-function skuConflictFieldErrors(error: { code?: string; message?: string }): Record<string, string[]> | undefined {
-  if (error.code !== "23505") return undefined;
-  if (error.message?.includes("sku")) return { sku: ["Ya existe un producto con ese SKU."] };
-  if (error.message?.includes("slug")) return { slug: ["Ya existe un producto con ese slug."] };
-  return undefined;
-}
+// computeSuggestedPrice y skuConflictFieldErrors viven en @/lib/utils/productPricing
+// (pura, testeada en tests/productPricing.test.ts — fase 1 del plan de cobertura de Tomás).
 
 async function upsertInternalInfo(
   supabase: Awaited<ReturnType<typeof createClient>>,
