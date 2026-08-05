@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileForm } from "@/features/account/ProfileForm";
 import { ChangePasswordForm } from "@/features/account/ChangePasswordForm";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
 import { ContactForm } from "@/features/home/ContactForm";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -115,10 +116,9 @@ export default async function CuentaPage() {
           </div>
 
           <div className="mt-10 border-t border-secondary/20 pt-6">
-            <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Cambiar contraseña</h2>
-            <div className="mt-4">
+            <CollapsibleSection addLabel="Cambiar contraseña">
               <ChangePasswordForm />
-            </div>
+            </CollapsibleSection>
           </div>
         </div>
 
@@ -225,14 +225,15 @@ export default async function CuentaPage() {
             )}
 
             <div className="mt-6 rounded-sm border border-secondary/30 bg-card/40 p-6">
-              <p className="mb-4 text-xs uppercase tracking-wide text-foreground/50">Enviar un nuevo mensaje</p>
-              <ContactForm
-                initialValues={{
-                  name: profile?.full_name ?? "",
-                  email: user.email ?? "",
-                  phone: profile?.phone ?? "",
-                }}
-              />
+              <CollapsibleSection addLabel="Enviar un nuevo mensaje">
+                <ContactForm
+                  initialValues={{
+                    name: profile?.full_name ?? "",
+                    email: user.email ?? "",
+                    phone: profile?.phone ?? "",
+                  }}
+                />
+              </CollapsibleSection>
             </div>
           </div>
         </div>

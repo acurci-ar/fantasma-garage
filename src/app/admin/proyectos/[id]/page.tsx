@@ -9,7 +9,7 @@ import { ProjectImageManager } from "@/features/admin/ProjectImageManager";
 import { ProjectVideoForm } from "@/features/admin/ProjectVideoForm";
 import { ProjectVideoRow } from "@/features/admin/ProjectVideoRow";
 import { BulkImageUploadForm } from "@/features/admin/BulkImageUploadForm";
-import { CollapsibleFormSection } from "@/features/admin/CollapsibleFormSection";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { ProjectDocumentForm } from "@/features/admin/ProjectDocumentForm";
 import { ProjectDocumentRow } from "@/features/admin/ProjectDocumentRow";
 import { ProjectStageManager } from "@/features/admin/ProjectStageManager";
@@ -120,7 +120,7 @@ export default async function EditProjectPage({ params }: { params: { id: string
                 )}
 
                 <div className="mt-6">
-                  <CollapsibleFormSection addLabel="+ Agregar fotos">
+                  <CollapsibleSection addLabel="+ Agregar fotos">
                     <div className="space-y-6">
                       <BulkImageUploadForm key={images.length} action={addProjectImages.bind(null, id)} />
                       <div>
@@ -135,7 +135,7 @@ export default async function EditProjectPage({ params }: { params: { id: string
                         />
                       </div>
                     </div>
-                  </CollapsibleFormSection>
+                  </CollapsibleSection>
                 </div>
               </section>
 
@@ -154,14 +154,14 @@ export default async function EditProjectPage({ params }: { params: { id: string
                 )}
 
                 <div className="mt-6">
-                  <CollapsibleFormSection addLabel="+ Agregar video">
+                  <CollapsibleSection addLabel="+ Agregar video">
                     <ProjectVideoForm
                       key={typedVideos.length}
                       action={addProjectVideo.bind(null, id)}
                       stages={typedStages}
                       submitLabel="Agregar"
                     />
-                  </CollapsibleFormSection>
+                  </CollapsibleSection>
                 </div>
               </section>
             </div>

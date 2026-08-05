@@ -3,13 +3,18 @@
 import { useState, type ReactNode } from "react";
 
 /**
- * Envoltorio genérico para formularios grandes que no conviene tener
- * siempre visibles (ej. agregar foto/video con todos sus campos): arranca
+ * Envoltorio genérico para formularios que no conviene tener siempre
+ * visibles (ej. agregar foto/video en admin con todos sus campos, o
+ * "Cambiar contraseña" / "Enviar un nuevo mensaje" en /cuenta): arranca
  * colapsado mostrando solo un botón, y al clickearlo revela el contenido.
- * No se auto-cierra al guardar (útil para cargar varios ítems seguidos);
- * el propio botón alterna a "Cerrar" para volver a colapsarlo.
+ * No se auto-cierra al guardar (útil para cargar varios ítems seguidos en
+ * admin); el propio botón alterna a "Cerrar" para volver a colapsarlo.
+ *
+ * Vivía en features/admin/CollapsibleFormSection.tsx, pero no tiene nada
+ * de admin-específico — se movió acá (components/ui) al reusarla en
+ * /cuenta (sección 8, ago-2026).
  */
-export function CollapsibleFormSection({
+export function CollapsibleSection({
   addLabel,
   closeLabel = "Cerrar",
   defaultOpen = false,
