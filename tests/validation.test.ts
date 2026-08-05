@@ -57,6 +57,12 @@ test("checkoutFormSchema rechaza productId vacío", () => {
   assert.equal(result.success, false);
 });
 
+// category_id y featured son obligatorios en productSchema (categorías y
+// destacados de home se agregaron después de que se escribió este fixture
+// por primera vez); image_url/image_alt en cambio ya no existen en el
+// schema — las imágenes de producto viven en la tabla product_images, no
+// como campo del producto — Zod las ignora en silencio al parsear, pero no
+// hace falta mandarlas.
 const validProduct = {
   name: "Kit de suspensión",
   slug: "kit-suspension",
@@ -69,8 +75,8 @@ const validProduct = {
   low_stock_threshold: "2",
   currency: "ARS",
   status: "published",
-  image_url: "/images/productos/suspension.webp",
-  image_alt: "Kit de suspensión",
+  category_id: "9c858901-8a57-4791-81fe-4c455b099bc9",
+  featured: false,
 };
 
 test("productSchema acepta un producto válido y castea números", () => {
