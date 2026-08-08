@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { setNewPasswordAfterRecovery, type SetNewPasswordActionState } from "@/actions/account";
 
 const inputClasses =
@@ -50,10 +51,9 @@ export function SetNewPasswordForm() {
         <label htmlFor="new_password" className={labelClasses}>
           Nueva contraseña
         </label>
-        <input
+        <PasswordInput
           id="new_password"
           name="new_password"
-          type="password"
           autoComplete="new-password"
           minLength={8}
           required
@@ -67,10 +67,9 @@ export function SetNewPasswordForm() {
         <label htmlFor="confirm_password" className={labelClasses}>
           Repetir nueva contraseña
         </label>
-        <input
+        <PasswordInput
           id="confirm_password"
           name="confirm_password"
-          type="password"
           autoComplete="new-password"
           minLength={8}
           required

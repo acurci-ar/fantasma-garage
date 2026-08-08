@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { changePassword, type ChangePasswordActionState } from "@/actions/account";
 
 const inputClasses =
@@ -41,10 +42,9 @@ export function ChangePasswordForm() {
         <label htmlFor="current_password" className={labelClasses}>
           Contraseña actual
         </label>
-        <input
+        <PasswordInput
           id="current_password"
           name="current_password"
-          type="password"
           autoComplete="current-password"
           required
           className={inputClasses}
@@ -56,10 +56,9 @@ export function ChangePasswordForm() {
         <label htmlFor="new_password" className={labelClasses}>
           Nueva contraseña
         </label>
-        <input
+        <PasswordInput
           id="new_password"
           name="new_password"
-          type="password"
           autoComplete="new-password"
           minLength={8}
           required
@@ -73,10 +72,9 @@ export function ChangePasswordForm() {
         <label htmlFor="confirm_password" className={labelClasses}>
           Repetir nueva contraseña
         </label>
-        <input
+        <PasswordInput
           id="confirm_password"
           name="confirm_password"
-          type="password"
           autoComplete="new-password"
           minLength={8}
           required

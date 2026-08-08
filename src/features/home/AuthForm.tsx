@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { getActiveNewsletterInterests } from "@/actions/newsletter";
 import type { NewsletterInterestTag } from "@/types/database";
 
@@ -17,9 +18,47 @@ interface AuthFormProps {
   redirectTo?: string;
 }
 
+interface AuthFieldErrors {
+  email?: string;
+  password?: string;
+}
+
+/**
+ * Supabase no devuelve fieldErrors estructurados (a diferencia de los
+ * server actions con Zod): tira un `AuthError` con un `message` en inglés.
+ * Acá lo traducimos y, cuando se puede identificar con certeza a qué campo
+ * corresponde, lo pineamos ahí; si es ambiguo (ej. credenciales inválidas,
+ * que puede ser el email o la contraseña) se deja como mensaje general.
+ */
+function translateAuthError(error: unknown): { field?: keyof AuthFieldErrors; message: string } {
+  const raw = error instanceof Error ? error.message : "";
+  const lower = raw.toLowerCase();
+
+  if (lower.includes("already registered") || lower.includes("already exists") || lower.includes("user already")) {
+    return { field: "email", message: "Ese email ya tiene una cuenta creada. Iniciá sesión en su lugar." };
+  }
+  if (lower.includes("invalid login credentials")) {
+    return { message: "Email o contraseña incorrectos." };
+  }
+  if (lower.includes("email not confirmed")) {
+    return { field: "email", message: "Todavía no confirmaste este email: revisá tu casilla de entrada." };
+  }
+  if (lower.includes("email") && (lower.includes("invalid") || lower.includes("valid") || lower.includes("format"))) {
+    return { field: "email", message: "Ese email no tiene un formato válido." };
+  }
+  if (lower.includes("password") && (lower.includes("least") || lower.includes("short") || lower.includes("weak"))) {
+    return { field: "password", message: "La contraseña tiene que tener al menos 8 caracteres." };
+  }
+  if (lower.includes("rate limit")) {
+    return { message: "Demasiados intentos seguidos. Esperá un minuto y probá de nuevo." };
+  }
+  return { message: raw || "Ocurrió un error. Probá de nuevo." };
+}
+
 export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({});
   const [interests, setInterests] = useState<NewsletterInterestTag[]>([]);
 
   // Al registrarse, se le ofrece elegir sus áreas de interés: se guardan
@@ -35,6 +74,7 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
     e.preventDefault();
     setStatus("loading");
     setMessage("");
+    setFieldErrors({});
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -55,6 +95,12 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
     try {
       const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
+      // A dónde manda /auth/callback una vez que intercambió el ?code por
+      // sesión: a /auth/confirmado (pantalla de éxito con la estética del
+      // sitio que a los 5s redirige a /login), arrastrando el redirectTo
+      // original (ej. volver a /checkout) como query param para no perderlo.
+      const confirmNext =
+        redirectTo === "/cuenta" ? "/auth/confirmado" : `/auth/confirmado?redirect=${encodeURIComponent(redirectTo)}`;
       const { error } =
         mode === "login"
           ? await supabase.auth.signInWithPassword({ email, password })
@@ -70,13 +116,13 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
               // pero igual hay que agregar ese dominio a la lista de
               // "Redirect URLs" del dashboard o Supabase lo va a rechazar.
               //
-              // Apunta a /auth/callback (no directo a redirectTo): con el
+              // Apunta a /auth/callback (no directo a confirmNext): con el
               // flujo PKCE que usa @supabase/ssr, el link de confirmación
               // llega con ?code=... que hay que intercambiar por una sesión
               // server-side — si no, el usuario queda confirmado pero
-              // deslogueado. next=redirectTo es a dónde va una vez logueado.
+              // deslogueado. next=confirmNext es a dónde va una vez canjeado.
               options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+                emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(confirmNext)}`,
                 // Se leen en el trigger handle_new_user() (SQL) para dar de
                 // alta al newsletter con estos intereses apenas se crea el
                 // usuario — ver 0015_signup_newsletter.sql.
@@ -107,7 +153,13 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
       );
     } catch (error) {
       setStatus("error");
-      setMessage((error as Error).message || "Ocurrió un error. Probá de nuevo.");
+      const { field, message: fieldMessage } = translateAuthError(error);
+      if (field) {
+        setFieldErrors({ [field]: fieldMessage });
+        setMessage("Revisá los datos del formulario.");
+      } else {
+        setMessage(fieldMessage);
+      }
     }
   }
 
@@ -118,12 +170,14 @@ export function AuthForm({ mode, redirectTo = "/cuenta" }: AuthFormProps) {
           Email
         </label>
         <input id="email" name="email" type="email" required className={inputClasses} />
+        {fieldErrors.email && <p className="mt-1 text-xs text-primary">{fieldErrors.email}</p>}
       </div>
       <div>
         <label htmlFor="password" className="mb-2 block text-xs font-semibold uppercase tracking-wide text-foreground/60">
           Contraseña
         </label>
-        <input id="password" name="password" type="password" required minLength={8} className={inputClasses} />
+        <PasswordInput id="password" name="password" required minLength={8} className={inputClasses} />
+        {fieldErrors.password && <p className="mt-1 text-xs text-primary">{fieldErrors.password}</p>}
       </div>
 
       {mode === "login" && (
