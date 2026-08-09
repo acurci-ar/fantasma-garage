@@ -1,9 +1,15 @@
 "use server";
 
-import { newsletterSchema } from "@/lib/validation/newsletter";
+import { newsletterSchema, newsletterPreferencesSchema } from "@/lib/validation/newsletter";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rateLimit";
 import type { NewsletterInterestTag } from "@/types/database";
+
+export interface NewsletterPreferencesActionState {
+  status: "idle" | "success" | "error";
+  message: string;
+  fieldErrors?: Record<string, string[]>;
+}
 
 // 5 altas/actualizaciones cada 10 minutos por IP (mismo criterio que
 // contacto — sección 7.1, auditoría de Santiago, ago-2026): alcanza para
@@ -152,4 +158,118 @@ export async function isCurrentUserNewsletterSubscriber(): Promise<boolean> {
     .maybeSingle();
 
   return Boolean(data);
+}
+
+/**
+ * Actualiza los intereses del suscriptor logueado (sección "Preferencias
+ * de newsletter" en /cuenta — antes de esto no había ninguna forma de que
+ * un cliente ya suscripto cambiara sus intereses: el único mecanismo,
+ * reabrir el modal público de alta, se ocultaba justamente para los
+ * ya-suscriptos, ver isCurrentUserNewsletterSubscriber más arriba).
+ *
+ * A diferencia de subscribeNewsletter (alta pública, anónima, con el email
+ * tipeado a mano), esta acción exige sesión y usa siempre el email de la
+ * sesión — nunca uno que venga del formulario. Hace upsert por email igual
+ * que subscribeNewsletter (mismo mecanismo probado), fijando status
+ * "activo": entrar a esta sección y guardar equivale a (re)suscribirse.
+ */
+export async function updateNewsletterPreferences(
+  _prevState: NewsletterPreferencesActionState,
+  formData: FormData
+): Promise<NewsletterPreferencesActionState> {
+  const parsed = newsletterPreferencesSchema.safeParse({
+    interests: formData.getAll("interests").map(String),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "Revisá los intereses seleccionados.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { status: "error", message: "Tu sesión expiró. Volvé a iniciar sesión." };
+  }
+
+  try {
+    let interests: string[] = [];
+    if (parsed.data.interests.length > 0) {
+      const { data: validInterests } = await supabase
+        .from("newsletter_interests")
+        .select("slug")
+        .eq("active", true)
+        .in("slug", parsed.data.interests);
+      interests = (validInterests ?? []).map((row) => row.slug as string);
+    }
+
+    const { error } = await supabase.from("newsletter_subscribers").upsert(
+      {
+        email: user.email,
+        interests,
+        user_id: user.id,
+        status: "activo",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email" }
+    );
+
+    if (error) throw error;
+
+    return { status: "success", message: "Preferencias guardadas." };
+  } catch (error) {
+    console.error("[newsletter] Error al actualizar preferencias:", error);
+    return { status: "error", message: "No pudimos guardar tus preferencias. Probá de nuevo." };
+  }
+}
+
+/**
+ * Baja del newsletter para el usuario logueado: pone status = "baja" en
+ * vez de borrar el registro, así si se vuelve a suscribir más adelante no
+ * pierde el historial de intereses ya cargados. Se invoca directo desde el
+ * cliente como RPC (no está atada a un <form>), igual que
+ * isCurrentUserNewsletterSubscriber.
+ *
+ * Filtra por user_id (no por email): así cae siempre dentro de la RLS
+ * newsletter_update_public_or_own sin depender de que la fila tenga el
+ * email "correcto" — y updateNewsletterPreferences ya garantiza que, en
+ * cuanto este usuario guardó preferencias una vez, su fila quedó linkeada
+ * por user_id.
+ */
+export async function unsubscribeCurrentUserFromNewsletter(): Promise<{
+  status: "success" | "error";
+  message: string;
+}> {
+  if (!isSupabaseConfigured()) {
+    return { status: "error", message: "Supabase no está configurado en este entorno (modo demo)." };
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { status: "error", message: "Tu sesión expiró. Volvé a iniciar sesión." };
+  }
+
+  const { error } = await supabase
+    .from("newsletter_subscribers")
+    .update({ status: "baja", updated_at: new Date().toISOString() })
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("[newsletter] Error al dar de baja:", error);
+    return { status: "error", message: "No pudimos procesar la baja. Probá de nuevo." };
+  }
+
+  return { status: "success", message: "Listo, te diste de baja del newsletter." };
 }

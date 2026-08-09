@@ -6,12 +6,21 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileForm } from "@/features/account/ProfileForm";
 import { ChangePasswordForm } from "@/features/account/ChangePasswordForm";
+import { NewsletterPreferencesForm } from "@/features/account/NewsletterPreferencesForm";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
 import { ContactForm } from "@/features/home/ContactForm";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
-import type { ContactMessage, ContactMessageReply, Order, Profile, Project } from "@/types/database";
+import type {
+  ContactMessage,
+  ContactMessageReply,
+  NewsletterInterestTag,
+  NewsletterSubscriber,
+  Order,
+  Profile,
+  Project,
+} from "@/types/database";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false, follow: false } };
 
@@ -56,10 +65,13 @@ export default async function CuentaPage() {
     redirect("/admin");
   }
 
-  const [{ data: orders }, { data: messages }] = await Promise.all([
-    supabase.from("orders").select("*").order("created_at", { ascending: false }),
-    supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
-  ]);
+  const [{ data: orders }, { data: messages }, { data: newsletterSubscription }, { data: newsletterInterests }] =
+    await Promise.all([
+      supabase.from("orders").select("*").order("created_at", { ascending: false }),
+      supabase.from("contact_messages").select("*").order("created_at", { ascending: false }),
+      supabase.from("newsletter_subscribers").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("newsletter_interests").select("*").eq("active", true).order("sort_order", { ascending: true }),
+    ]);
 
   const typedOrders = (orders ?? []) as Order[];
   const typedMessages = (messages ?? []) as ContactMessage[];
@@ -119,6 +131,16 @@ export default async function CuentaPage() {
             <CollapsibleSection addLabel="Cambiar contraseña">
               <ChangePasswordForm />
             </CollapsibleSection>
+          </div>
+
+          <div className="mt-10 border-t border-secondary/20 pt-6">
+            <h2 className="mb-4 font-display text-sm uppercase tracking-wide text-foreground/70">
+              Preferencias de newsletter
+            </h2>
+            <NewsletterPreferencesForm
+              interests={(newsletterInterests ?? []) as NewsletterInterestTag[]}
+              subscription={newsletterSubscription as NewsletterSubscriber | null}
+            />
           </div>
         </div>
 
