@@ -70,6 +70,19 @@ export function ProductForm({
   const [salePrice, setSalePrice] = useState(product?.sale_price != null ? String(product.sale_price) : "");
   const [currency, setCurrency] = useState<"ARS" | "USD">(product?.currency ?? "ARS");
 
+  // Costo de envío: se sugiere automáticamente como peso × 45 USD (proxy
+  // pensado para importaciones de EE.UU.), pero es editable — no todos los
+  // productos siguen esa fórmula (ej. de origen argentino). Mismo patrón
+  // "touched" que el slug: mientras el admin no lo toque a mano, se
+  // recalcula solo cada vez que cambia el peso; en cuanto lo edita
+  // directamente, deja de auto-actualizarse (salvo que pida "usar cálculo
+  // automático" de nuevo).
+  const initialAutoShipping = (internal?.weight_kg ?? 0) * 45;
+  const [shippingCostTouched, setShippingCostTouched] = useState(
+    internal?.shipping_cost != null && internal.shipping_cost !== initialAutoShipping
+  );
+  const [shippingCost, setShippingCost] = useState(internal?.shipping_cost != null ? String(internal.shipping_cost) : "");
+
   // Cotización del dólar blue, solo para poder comparar el costo interno
   // contra el precio público cuando están en monedas distintas (ver
   // priceBelowCost/salePriceBelowCost más abajo) — pedido de Alejandro tras
@@ -87,11 +100,25 @@ export function ProductForm({
     });
   }, [canSeeInternal]);
 
-  const shippingCost = useMemo(() => (parseNum(weightKg) ?? 0) * 45, [weightKg]);
-  const totalCost = useMemo(() => (parseNum(costPrice) ?? 0) + shippingCost, [costPrice, shippingCost]);
+  // Mientras no esté "touched", el costo de envío sigue al peso.
+  useEffect(() => {
+    if (shippingCostTouched) return;
+    const auto = (parseNum(weightKg) ?? 0) * 45;
+    setShippingCost(weightKg === "" ? "" : String(Math.round(auto * 100) / 100));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weightKg, shippingCostTouched]);
+
+  function resetShippingCostToAuto() {
+    const auto = (parseNum(weightKg) ?? 0) * 45;
+    setShippingCost(weightKg === "" ? "" : String(Math.round(auto * 100) / 100));
+    setShippingCostTouched(false);
+  }
+
+  const shippingCostNum = parseNum(shippingCost) ?? 0;
+  const totalCost = useMemo(() => (parseNum(costPrice) ?? 0) + shippingCostNum, [costPrice, shippingCostNum]);
   const suggestedPrice = useMemo(
-    () => Math.round(((parseNum(costPrice) ?? 0) * 1.12 + shippingCost * 1.5) * 100) / 100,
-    [costPrice, shippingCost]
+    () => Math.round(((parseNum(costPrice) ?? 0) * 1.12 + shippingCostNum * 1.5) * 100) / 100,
+    [costPrice, shippingCostNum]
   );
   const hasCostData = parseNum(costPrice) !== null || parseNum(weightKg) !== null;
 
@@ -300,6 +327,184 @@ export function ProductForm({
         <FieldError errors={state.fieldErrors?.description} />
       </div>
 
+      {canSeeInternal && (
+        <div className="space-y-5 rounded-sm border border-primary/30 bg-primary/5 p-5">
+          <div>
+            <p className={labelClasses}>Información interna (solo admin)</p>
+            <p className="text-xs text-foreground/50">No se muestra en la tienda pública, ni siquiera a editores.</p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <FieldLabel
+                htmlFor="supplier_name"
+                className={labelClasses}
+                help="A quién le compraste este producto."
+                example="AutoParts USA"
+              >
+                Proveedor
+              </FieldLabel>
+              <input
+                id="supplier_name"
+                name="supplier_name"
+                type="text"
+                defaultValue={internal?.supplier_name ?? ""}
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <FieldLabel
+                htmlFor="supplier_link"
+                className={labelClasses}
+                help="Link a la publicación o página del proveedor, para volver a encontrarla rápido."
+                example="https://www.ebay.com/itm/..."
+              >
+                Link
+              </FieldLabel>
+              <input
+                id="supplier_link"
+                name="supplier_link"
+                type="text"
+                placeholder="https://..."
+                defaultValue={internal?.supplier_link ?? ""}
+                className={inputClasses}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div>
+              <FieldLabel
+                htmlFor="cost_price"
+                className={labelClasses}
+                help="Lo que efectivamente pagaste por el producto, sin envío. Con esto y el peso se calcula el costo total y el precio sugerido."
+                example="120"
+              >
+                Precio producto (lo que pagaste)
+              </FieldLabel>
+              <input
+                id="cost_price"
+                name="cost_price"
+                type="number"
+                min="0"
+                step="0.01"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <FieldLabel
+                htmlFor="weight_kg"
+                className={labelClasses}
+                help="Peso del producto. Se usa para sugerir automáticamente el costo de envío (peso × 45 USD), que después podés editar a mano."
+                example="3.5"
+              >
+                Peso (kg)
+              </FieldLabel>
+              <input
+                id="weight_kg"
+                name="weight_kg"
+                type="number"
+                min="0"
+                step="0.001"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                className={inputClasses}
+              />
+            </div>
+            <div>
+              <FieldLabel
+                htmlFor="internal_currency"
+                className={labelClasses}
+                help="En qué moneda pagaste el producto. Puede ser distinta de la moneda del precio público — si difieren, la comparación de abajo convierte con el dólar blue."
+              >
+                Moneda del costo
+              </FieldLabel>
+              <select
+                id="internal_currency"
+                name="internal_currency"
+                value={internalCurrency}
+                onChange={(e) => setInternalCurrency(e.target.value as "ARS" | "USD")}
+                className={inputClasses}
+              >
+                <option value="USD">USD</option>
+                <option value="ARS">ARS</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <FieldLabel
+                htmlFor="shipping_cost"
+                className={cn(labelClasses, "mb-0")}
+                help="Se sugiere solo como peso × 45 USD (proxy pensado para importaciones de EE.UU.), pero podés escribir otro valor — por ejemplo, envío nacional para productos de origen argentino."
+                example="157.50"
+              >
+                Costo de envío
+              </FieldLabel>
+              {shippingCostTouched && (
+                <button
+                  type="button"
+                  onClick={resetShippingCostToAuto}
+                  className="text-[11px] font-semibold uppercase tracking-wide text-primary hover:underline"
+                >
+                  Usar cálculo automático (peso × 45 USD)
+                </button>
+              )}
+            </div>
+            <input
+              id="shipping_cost"
+              name="shipping_cost"
+              type="number"
+              min="0"
+              step="0.01"
+              value={shippingCost}
+              onChange={(e) => {
+                setShippingCostTouched(true);
+                setShippingCost(e.target.value);
+              }}
+              className={cn(inputClasses, "mt-2")}
+            />
+            <p className="mt-1 text-[11px] text-foreground/35">
+              {shippingCostTouched
+                ? "Editado a mano — ya no sigue al peso automáticamente."
+                : "Se recalcula solo mientras no lo edites (peso × 45 USD)."}
+            </p>
+          </div>
+
+          <dl className="grid gap-4 border-t border-primary/20 pt-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo total</dt>
+              <dd className="mt-1 text-sm text-foreground/80">{formatCurrency(totalCost, internalCurrency)}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto + costo envío</p>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-foreground/40">Precio sugerido</dt>
+              <dd className="mt-1 text-sm font-semibold text-primary">{formatCurrency(suggestedPrice, internalCurrency)}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto × 1.12 + costo envío × 1.5</p>
+            </div>
+          </dl>
+          {blueRate && (
+            <p className="text-[11px] text-foreground/35">
+              Dólar blue venta: {formatCurrency(blueRate.venta, "ARS")} (
+              {new Date(blueRate.fechaActualizacion).toLocaleString("es-AR")})
+            </p>
+          )}
+          {blueRateFailed && (
+            <p className="text-[11px] text-foreground/35">
+              No pudimos obtener la cotización del dólar blue — si la moneda del costo y la del precio público
+              difieren, no se va a mostrar la advertencia de precio por debajo del costo.
+            </p>
+          )}
+          <FieldError errors={state.fieldErrors?.cost_price} />
+          <FieldError errors={state.fieldErrors?.weight_kg} />
+          <FieldError errors={state.fieldErrors?.shipping_cost} />
+          <FieldError errors={state.fieldErrors?.supplier_link} />
+        </div>
+      )}
+
       <div className="grid gap-5 sm:grid-cols-3">
         <div>
           <FieldLabel
@@ -435,148 +640,6 @@ export function ProductForm({
         <p className="rounded-sm border border-secondary/30 bg-card/40 p-4 text-xs text-foreground/50">
           Las fotos se cargan después de crear el producto (próxima pantalla).
         </p>
-      )}
-
-      {canSeeInternal && (
-        <div className="space-y-5 rounded-sm border border-primary/30 bg-primary/5 p-5">
-          <div>
-            <p className={labelClasses}>Información interna (solo admin)</p>
-            <p className="text-xs text-foreground/50">No se muestra en la tienda pública, ni siquiera a editores.</p>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <FieldLabel
-                htmlFor="supplier_name"
-                className={labelClasses}
-                help="A quién le compraste este producto."
-                example="AutoParts USA"
-              >
-                Proveedor
-              </FieldLabel>
-              <input
-                id="supplier_name"
-                name="supplier_name"
-                type="text"
-                defaultValue={internal?.supplier_name ?? ""}
-                className={inputClasses}
-              />
-            </div>
-            <div>
-              <FieldLabel
-                htmlFor="supplier_link"
-                className={labelClasses}
-                help="Link a la publicación o página del proveedor, para volver a encontrarla rápido."
-                example="https://www.ebay.com/itm/..."
-              >
-                Link
-              </FieldLabel>
-              <input
-                id="supplier_link"
-                name="supplier_link"
-                type="text"
-                placeholder="https://..."
-                defaultValue={internal?.supplier_link ?? ""}
-                className={inputClasses}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-3">
-            <div>
-              <FieldLabel
-                htmlFor="cost_price"
-                className={labelClasses}
-                help="Lo que efectivamente pagaste por el producto, sin envío. Con esto y el peso se calcula el costo total y el precio sugerido."
-                example="120"
-              >
-                Precio producto (lo que pagaste)
-              </FieldLabel>
-              <input
-                id="cost_price"
-                name="cost_price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-                className={inputClasses}
-              />
-            </div>
-            <div>
-              <FieldLabel
-                htmlFor="weight_kg"
-                className={labelClasses}
-                help="Peso del producto, usado para calcular el costo de envío (peso × 45 USD)."
-                example="3.5"
-              >
-                Peso (kg)
-              </FieldLabel>
-              <input
-                id="weight_kg"
-                name="weight_kg"
-                type="number"
-                min="0"
-                step="0.001"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
-                className={inputClasses}
-              />
-            </div>
-            <div>
-              <FieldLabel
-                htmlFor="internal_currency"
-                className={labelClasses}
-                help="En qué moneda pagaste el producto. Puede ser distinta de la moneda del precio público — si difieren, la comparación de abajo convierte con el dólar blue."
-              >
-                Moneda del costo
-              </FieldLabel>
-              <select
-                id="internal_currency"
-                name="internal_currency"
-                value={internalCurrency}
-                onChange={(e) => setInternalCurrency(e.target.value as "ARS" | "USD")}
-                className={inputClasses}
-              >
-                <option value="USD">USD</option>
-                <option value="ARS">ARS</option>
-              </select>
-            </div>
-          </div>
-
-          <dl className="grid gap-4 border-t border-primary/20 pt-4 sm:grid-cols-3">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo envío</dt>
-              <dd className="mt-1 text-sm text-foreground/80">{formatCurrency(shippingCost, "USD")}</dd>
-              <p className="mt-0.5 text-[11px] text-foreground/35">Peso × 45 USD (proxy fijo, no varía con la moneda del costo)</p>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo total</dt>
-              <dd className="mt-1 text-sm text-foreground/80">{formatCurrency(totalCost, internalCurrency)}</dd>
-              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto + costo envío</p>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-foreground/40">Precio sugerido</dt>
-              <dd className="mt-1 text-sm font-semibold text-primary">{formatCurrency(suggestedPrice, internalCurrency)}</dd>
-              <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto × 1.12 + costo envío × 1.5</p>
-            </div>
-          </dl>
-          {blueRate && (
-            <p className="text-[11px] text-foreground/35">
-              Dólar blue venta: {formatCurrency(blueRate.venta, "ARS")} (
-              {new Date(blueRate.fechaActualizacion).toLocaleString("es-AR")})
-            </p>
-          )}
-          {blueRateFailed && (
-            <p className="text-[11px] text-foreground/35">
-              No pudimos obtener la cotización del dólar blue — si la moneda del costo y la del precio público
-              difieren, no se va a mostrar la advertencia de precio por debajo del costo.
-            </p>
-          )}
-          <FieldError errors={state.fieldErrors?.cost_price} />
-          <FieldError errors={state.fieldErrors?.weight_kg} />
-          <FieldError errors={state.fieldErrors?.supplier_link} />
-        </div>
       )}
 
       <div className="flex flex-wrap items-center gap-4">

@@ -6,9 +6,23 @@
  * integridad de datos (mensajes de conflicto de SKU/slug).
  */
 
-/** Precio Sugerido = cost_price × 1.12 + (weight_kg × 45) × 1.5 — mismo cálculo que la columna generada de product_internal_info (ver supabase/migrations/0018_products_catalog_extras.sql), para el fallback server-side cuando el precio llega vacío. */
-export function computeSuggestedPrice(costPrice: number | null, weightKg: number | null): number {
-  const shipping = (weightKg ?? 0) * 45;
+/**
+ * Precio Sugerido = cost_price × 1.12 + shipping × 1.5 — mismo cálculo que
+ * la columna generada suggested_price de product_internal_info (ver
+ * supabase/migrations/0022_product_shipping_cost_editable.sql), para el
+ * fallback server-side cuando el precio llega vacío.
+ *
+ * `shippingCostOverride`: desde que el costo de envío es editable (ya no
+ * siempre peso × 45 USD — ver esa misma migración), si el admin cargó un
+ * valor a mano se usa tal cual (incluso si es 0); si no se pasa o es null,
+ * se cae al cálculo automático de peso × 45.
+ */
+export function computeSuggestedPrice(
+  costPrice: number | null,
+  weightKg: number | null,
+  shippingCostOverride?: number | null
+): number {
+  const shipping = shippingCostOverride ?? (weightKg ?? 0) * 45;
   return Math.round(((costPrice ?? 0) * 1.12 + shipping * 1.5) * 100) / 100;
 }
 

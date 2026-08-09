@@ -97,8 +97,8 @@ export interface ProductInternalInfo {
   weight_kg: number | null;
   /** Moneda de cost_price. Puede diferir de Product.currency (la del precio público) — ver ProductForm.tsx. */
   currency: "ARS" | "USD";
-  /** Calculado: weight_kg × 45 USD. */
-  shipping_cost: number;
+  /** Editable — el form lo sugiere como weight_kg × 45 USD, pero se puede pisar a mano (ej. productos de origen argentino). */
+  shipping_cost: number | null;
   /** Calculado: cost_price + shipping_cost. */
   total_cost: number;
   /** Calculado: cost_price × 1.12 + shipping_cost × 1.5. */

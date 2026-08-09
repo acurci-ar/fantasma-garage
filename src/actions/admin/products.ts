@@ -61,6 +61,7 @@ function parseProductInternalForm(formData: FormData) {
     supplier_link: String(formData.get("supplier_link") ?? ""),
     cost_price: String(formData.get("cost_price") ?? ""),
     weight_kg: String(formData.get("weight_kg") ?? ""),
+    shipping_cost: String(formData.get("shipping_cost") ?? ""),
     // Campo del form se llama "internal_currency" (no "currency" a secas)
     // para no chocar con el <select name="currency"> del precio público.
     currency: String(formData.get("internal_currency") || "USD"),
@@ -78,11 +79,16 @@ async function upsertInternalInfo(
     supplier_link: string | null;
     cost_price: number | null;
     weight_kg: number | null;
+    shipping_cost: number | null;
     currency: "ARS" | "USD";
   }
 ) {
   const hasAnyValue =
-    internal.supplier_name !== "" || internal.supplier_link !== null || internal.cost_price !== null || internal.weight_kg !== null;
+    internal.supplier_name !== "" ||
+    internal.supplier_link !== null ||
+    internal.cost_price !== null ||
+    internal.weight_kg !== null ||
+    internal.shipping_cost !== null;
   if (!hasAnyValue) return;
 
   // Best-effort: si quien guarda no es admin, la RLS de product_internal_info
@@ -94,6 +100,7 @@ async function upsertInternalInfo(
       supplier_link: internal.supplier_link,
       cost_price: internal.cost_price,
       weight_kg: internal.weight_kg,
+      shipping_cost: internal.shipping_cost,
       currency: internal.currency,
     },
     { onConflict: "product_id" }
@@ -113,9 +120,9 @@ export async function createProduct(
   // el Precio Sugerido antes de validar (sigue siendo editable: esto es solo
   // el valor con el que se guarda si el staff no lo tocó).
   if (String(formData.get("price") ?? "").trim() === "") {
-    const { cost_price, weight_kg } = parsedInternal.data;
+    const { cost_price, weight_kg, shipping_cost } = parsedInternal.data;
     if (cost_price !== null || weight_kg !== null) {
-      formData.set("price", String(computeSuggestedPrice(cost_price, weight_kg)));
+      formData.set("price", String(computeSuggestedPrice(cost_price, weight_kg, shipping_cost)));
     }
   }
 
@@ -169,9 +176,9 @@ export async function updateProduct(
   }
 
   if (String(formData.get("price") ?? "").trim() === "") {
-    const { cost_price, weight_kg } = parsedInternal.data;
+    const { cost_price, weight_kg, shipping_cost } = parsedInternal.data;
     if (cost_price !== null || weight_kg !== null) {
-      formData.set("price", String(computeSuggestedPrice(cost_price, weight_kg)));
+      formData.set("price", String(computeSuggestedPrice(cost_price, weight_kg, shipping_cost)));
     }
   }
 

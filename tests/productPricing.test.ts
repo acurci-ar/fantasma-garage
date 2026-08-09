@@ -26,6 +26,21 @@ test("computeSuggestedPrice redondea a 2 decimales", () => {
   assert.equal(computeSuggestedPrice(33.33, null), 37.33);
 });
 
+test("computeSuggestedPrice usa shippingCostOverride en vez de peso × 45 si se pasa", () => {
+  // 1000 * 1.12 + 200 * 1.5 = 1120 + 300 = 1420 (ignora el peso)
+  assert.equal(computeSuggestedPrice(1000, 10, 200), 1420);
+});
+
+test("computeSuggestedPrice acepta shippingCostOverride en 0 (no lo trata como 'sin override')", () => {
+  // 1000 * 1.12 + 0 * 1.5 = 1120
+  assert.equal(computeSuggestedPrice(1000, 10, 0), 1120);
+});
+
+test("computeSuggestedPrice cae al cálculo automático si shippingCostOverride es null o undefined", () => {
+  assert.equal(computeSuggestedPrice(1000, 10, null), 1795);
+  assert.equal(computeSuggestedPrice(1000, 10, undefined), 1795);
+});
+
 test("skuConflictFieldErrors devuelve undefined si el código no es 23505", () => {
   assert.equal(skuConflictFieldErrors({ code: "23503", message: "sku violation" }), undefined);
 });

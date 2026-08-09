@@ -69,6 +69,10 @@ export const productInternalSchema = z.object({
     .transform((v) => (v === "" ? null : v)),
   cost_price: optionalNumberField("un precio del producto"),
   weight_kg: optionalNumberField("un peso"),
+  // Se sugiere automáticamente en el form como peso × 45 USD, pero es
+  // editable: para productos que no siguen esa fórmula (ej. origen
+  // argentino) el admin puede pisarlo a mano.
+  shipping_cost: optionalNumberField("un costo de envío"),
   // Moneda en la que está cargado cost_price ("Precio producto"). Puede
   // diferir de `currency` (la del precio público) — ej. costo cargado en
   // USD pero el producto se vende en ARS. Ver ProductForm.tsx para la
