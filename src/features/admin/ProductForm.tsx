@@ -70,25 +70,11 @@ export function ProductForm({
   const [salePrice, setSalePrice] = useState(product?.sale_price != null ? String(product.sale_price) : "");
   const [currency, setCurrency] = useState<"ARS" | "USD">(product?.currency ?? "ARS");
 
-  // Costo de envío: se sugiere automáticamente como peso × 45 USD (proxy
-  // pensado para importaciones de EE.UU.), pero es editable — no todos los
-  // productos siguen esa fórmula (ej. de origen argentino). Mismo patrón
-  // "touched" que el slug: mientras el admin no lo toque a mano, se
-  // recalcula solo cada vez que cambia el peso; en cuanto lo edita
-  // directamente, deja de auto-actualizarse (salvo que pida "usar cálculo
-  // automático" de nuevo).
-  const initialAutoShipping = (internal?.weight_kg ?? 0) * 45;
-  const [shippingCostTouched, setShippingCostTouched] = useState(
-    internal?.shipping_cost != null && internal.shipping_cost !== initialAutoShipping
-  );
-  const [shippingCost, setShippingCost] = useState(internal?.shipping_cost != null ? String(internal.shipping_cost) : "");
-
-  // Cotización del dólar blue, solo para poder comparar el costo interno
-  // contra el precio público cuando están en monedas distintas (ver
-  // priceBelowCost/salePriceBelowCost más abajo) — pedido de Alejandro tras
-  // notar que la advertencia de "precio por debajo del costo" no tenía en
-  // cuenta que Información interna y el precio público pueden estar en
-  // monedas distintas.
+  // Cotización del dólar blue — hace falta en dos lugares: (1) para sugerir
+  // el costo de envío en ARS (ver autoShippingCost más abajo: peso × 45
+  // USD, convertido con el blue venta si "Moneda del costo" es ARS) y (2)
+  // para poder comparar el costo interno contra el precio público cuando
+  // están en monedas distintas (ver priceBelowCost/salePriceBelowCost).
   const [blueRate, setBlueRate] = useState<BlueDollarRate | null>(null);
   const [blueRateFailed, setBlueRateFailed] = useState(false);
 
@@ -100,17 +86,54 @@ export function ProductForm({
     });
   }, [canSeeInternal]);
 
-  // Mientras no esté "touched", el costo de envío sigue al peso.
+  // Costo de envío: se sugiere automáticamente como peso × 45 USD (proxy
+  // pensado para importaciones de EE.UU.) — si "Moneda del costo" es ARS,
+  // esos 45 USD/kg se convierten primero con el dólar blue de VENTA (peso ×
+  // (45 × cotización)), no se toman como si fueran 45 ARS/kg. El campo
+  // sigue siendo editable: no todos los productos siguen esta fórmula (ej.
+  // de origen argentino). Mismo patrón "touched" que el slug: mientras el
+  // admin no lo toque a mano, se recalcula solo; en cuanto lo edita
+  // directamente, deja de auto-actualizarse (salvo que pida "usar cálculo
+  // automático" de nuevo).
+  // Para decidir si un producto ya guardado arranca en modo "touched": si
+  // la moneda del costo es ARS no hay forma de saber acá qué cotización del
+  // blue regía cuando se guardó, así que cualquier shipping_cost ya cargado
+  // se trata como editado a mano (no se auto-pisa al abrir el form). Si es
+  // USD, se puede comparar contra el cálculo simple (peso × 45).
+  const initialAutoShippingUsd = (internal?.weight_kg ?? 0) * 45;
+  const [shippingCostTouched, setShippingCostTouched] = useState(
+    internal?.shipping_cost != null &&
+      (internal.currency === "ARS" || internal.shipping_cost !== initialAutoShippingUsd)
+  );
+  const [shippingCost, setShippingCost] = useState(internal?.shipping_cost != null ? String(internal.shipping_cost) : "");
+
+  // null = no se puede sugerir todavía (moneda ARS pero la cotización del
+  // blue no llegó o falló) — en ese caso no se toca shippingCost para no
+  // pisarlo con un número mal convertido; se actualiza solo en cuanto
+  // blueRate esté disponible.
+  const autoShippingCost = useMemo<number | null>(() => {
+    const weight = parseNum(weightKg);
+    if (weight === null) return null;
+    const usdPerKg = 45;
+    if (internalCurrency === "ARS") {
+      if (!blueRate) return null;
+      return Math.round(weight * usdPerKg * blueRate.venta * 100) / 100;
+    }
+    return Math.round(weight * usdPerKg * 100) / 100;
+  }, [weightKg, internalCurrency, blueRate]);
+
   useEffect(() => {
     if (shippingCostTouched) return;
-    const auto = (parseNum(weightKg) ?? 0) * 45;
-    setShippingCost(weightKg === "" ? "" : String(Math.round(auto * 100) / 100));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weightKg, shippingCostTouched]);
+    if (weightKg === "") {
+      setShippingCost("");
+      return;
+    }
+    if (autoShippingCost !== null) setShippingCost(String(autoShippingCost));
+  }, [weightKg, autoShippingCost, shippingCostTouched]);
 
   function resetShippingCostToAuto() {
-    const auto = (parseNum(weightKg) ?? 0) * 45;
-    setShippingCost(weightKg === "" ? "" : String(Math.round(auto * 100) / 100));
+    if (weightKg === "") setShippingCost("");
+    else if (autoShippingCost !== null) setShippingCost(String(autoShippingCost));
     setShippingCostTouched(false);
   }
 
@@ -397,7 +420,7 @@ export function ProductForm({
               <FieldLabel
                 htmlFor="weight_kg"
                 className={labelClasses}
-                help="Peso del producto. Se usa para sugerir automáticamente el costo de envío (peso × 45 USD), que después podés editar a mano."
+                help="Peso del producto. Se usa para sugerir automáticamente el costo de envío (peso × 45 USD; si la moneda del costo es ARS, esos 45 USD/kg se convierten con el dólar blue), que después podés editar a mano."
                 example="3.5"
               >
                 Peso (kg)
@@ -439,7 +462,7 @@ export function ProductForm({
               <FieldLabel
                 htmlFor="shipping_cost"
                 className={cn(labelClasses, "mb-0")}
-                help="Se sugiere solo como peso × 45 USD (proxy pensado para importaciones de EE.UU.), pero podés escribir otro valor — por ejemplo, envío nacional para productos de origen argentino."
+                help="Se sugiere solo como peso × 45 USD (proxy pensado para importaciones de EE.UU.; si la moneda del costo es ARS, se convierte con el dólar blue), pero podés escribir otro valor — por ejemplo, envío nacional para productos de origen argentino."
                 example="157.50"
               >
                 Costo de envío
@@ -450,7 +473,7 @@ export function ProductForm({
                   onClick={resetShippingCostToAuto}
                   className="text-[11px] font-semibold uppercase tracking-wide text-primary hover:underline"
                 >
-                  Usar cálculo automático (peso × 45 USD)
+                  Usar cálculo automático (peso × 45 USD{internalCurrency === "ARS" ? " × dólar blue" : ""})
                 </button>
               )}
             </div>
@@ -468,9 +491,19 @@ export function ProductForm({
               className={cn(inputClasses, "mt-2")}
             />
             <p className="mt-1 text-[11px] text-foreground/35">
-              {shippingCostTouched
-                ? "Editado a mano — ya no sigue al peso automáticamente."
-                : "Se recalcula solo mientras no lo edites (peso × 45 USD)."}
+              {shippingCostTouched ? (
+                "Editado a mano — ya no sigue al peso automáticamente."
+              ) : internalCurrency === "ARS" ? (
+                blueRate ? (
+                  <>Se recalcula solo: peso × 45 USD × {formatCurrency(blueRate.venta, "ARS")} (dólar blue venta).</>
+                ) : blueRateFailed ? (
+                  "No pudimos obtener la cotización del dólar blue: no podemos sugerir el envío en ARS, cargalo a mano."
+                ) : (
+                  "Esperando la cotización del dólar blue para poder sugerir el envío en ARS..."
+                )
+              ) : (
+                "Se recalcula solo mientras no lo edites (peso × 45 USD)."
+              )}
             </p>
           </div>
 
