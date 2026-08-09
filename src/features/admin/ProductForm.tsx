@@ -408,7 +408,7 @@ export function ProductForm({
                 help="Lo que efectivamente pagaste por el producto, sin envío. Con esto y el peso se calcula el costo total y el precio sugerido."
                 example="120"
               >
-                Precio producto (lo que pagaste)
+                Precio producto
               </FieldLabel>
               <input
                 id="cost_price"
