@@ -92,9 +92,11 @@ export interface ProductInternalInfo {
   product_id: UUID;
   supplier_name: string | null;
   supplier_link: string | null;
-  /** Lo pagado por el producto (USD), sin envío. */
+  /** Lo pagado por el producto, sin envío — en la moneda de `currency`. */
   cost_price: number | null;
   weight_kg: number | null;
+  /** Moneda de cost_price. Puede diferir de Product.currency (la del precio público) — ver ProductForm.tsx. */
+  currency: "ARS" | "USD";
   /** Calculado: weight_kg × 45 USD. */
   shipping_cost: number;
   /** Calculado: cost_price + shipping_cost. */

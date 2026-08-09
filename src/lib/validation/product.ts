@@ -69,4 +69,9 @@ export const productInternalSchema = z.object({
     .transform((v) => (v === "" ? null : v)),
   cost_price: optionalNumberField("un precio del producto"),
   weight_kg: optionalNumberField("un peso"),
+  // Moneda en la que está cargado cost_price ("Precio producto"). Puede
+  // diferir de `currency` (la del precio público) — ej. costo cargado en
+  // USD pero el producto se vende en ARS. Ver ProductForm.tsx para la
+  // comparación de precio-vs-costo currency-aware usando el dólar blue.
+  currency: z.enum(["ARS", "USD"]),
 });

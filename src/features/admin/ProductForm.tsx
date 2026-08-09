@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { FieldLabel } from "@/components/ui/FieldLabel";
-import { slugify } from "@/lib/utils/format";
+import { formatCurrency, slugify } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
+import { getBlueDollarRate, type BlueDollarRate } from "@/actions/dolar";
 import type { Category, Product } from "@/types/database";
 import type { ProductActionState } from "@/actions/admin/products";
 
@@ -37,10 +38,6 @@ function parseNum(v: string): number | null {
   return v.trim() === "" || Number.isNaN(n) ? null : n;
 }
 
-function formatUsd(n: number): string {
-  return n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 export function ProductForm({
   action,
   product,
@@ -68,8 +65,27 @@ export function ProductForm({
   const internal = product?.internal;
   const [costPrice, setCostPrice] = useState(internal?.cost_price != null ? String(internal.cost_price) : "");
   const [weightKg, setWeightKg] = useState(internal?.weight_kg != null ? String(internal.weight_kg) : "");
+  const [internalCurrency, setInternalCurrency] = useState<"ARS" | "USD">(internal?.currency ?? "USD");
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : "");
   const [salePrice, setSalePrice] = useState(product?.sale_price != null ? String(product.sale_price) : "");
+  const [currency, setCurrency] = useState<"ARS" | "USD">(product?.currency ?? "ARS");
+
+  // Cotización del dólar blue, solo para poder comparar el costo interno
+  // contra el precio público cuando están en monedas distintas (ver
+  // priceBelowCost/salePriceBelowCost más abajo) — pedido de Alejandro tras
+  // notar que la advertencia de "precio por debajo del costo" no tenía en
+  // cuenta que Información interna y el precio público pueden estar en
+  // monedas distintas.
+  const [blueRate, setBlueRate] = useState<BlueDollarRate | null>(null);
+  const [blueRateFailed, setBlueRateFailed] = useState(false);
+
+  useEffect(() => {
+    if (!canSeeInternal) return;
+    getBlueDollarRate().then((rate) => {
+      if (rate) setBlueRate(rate);
+      else setBlueRateFailed(true);
+    });
+  }, [canSeeInternal]);
 
   const shippingCost = useMemo(() => (parseNum(weightKg) ?? 0) * 45, [weightKg]);
   const totalCost = useMemo(() => (parseNum(costPrice) ?? 0) + shippingCost, [costPrice, shippingCost]);
@@ -88,9 +104,41 @@ export function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedPrice, hasCostData]);
 
-  const priceBelowCost = canSeeInternal && totalCost > 0 && parseNum(price) !== null && (parseNum(price) as number) < totalCost;
+  // totalCost está en internalCurrency. Si el precio público (currency) es
+  // una moneda distinta, hay que convertir antes de comparar — si no,
+  // terminás comparando pesos contra dólares como si fueran el mismo
+  // número. Se usa el dólar blue de VENTA (lo que cuesta comprar esos
+  // dólares), tal como lo pidió Alejandro. Si las monedas coinciden no hace
+  // falta cotización; si difieren y todavía no llegó (o falló), no se puede
+  // comparar con certeza — se devuelve null y no se muestra advertencia
+  // (mejor no advertir que advertir con un número mal convertido).
+  const currenciesDiffer = internalCurrency !== currency;
+  const totalCostInProductCurrency = useMemo<number | null>(() => {
+    if (!currenciesDiffer) return totalCost;
+    if (!blueRate) return null;
+    if (internalCurrency === "USD" && currency === "ARS") return totalCost * blueRate.venta;
+    if (internalCurrency === "ARS" && currency === "USD") return totalCost / blueRate.venta;
+    return totalCost;
+  }, [totalCost, currenciesDiffer, blueRate, internalCurrency, currency]);
+
+  const priceBelowCost =
+    canSeeInternal &&
+    totalCost > 0 &&
+    totalCostInProductCurrency !== null &&
+    parseNum(price) !== null &&
+    (parseNum(price) as number) < totalCostInProductCurrency;
   const salePriceBelowCost =
-    canSeeInternal && totalCost > 0 && parseNum(salePrice) !== null && (parseNum(salePrice) as number) < totalCost;
+    canSeeInternal &&
+    totalCost > 0 &&
+    totalCostInProductCurrency !== null &&
+    parseNum(salePrice) !== null &&
+    (parseNum(salePrice) as number) < totalCostInProductCurrency;
+  const conversionUnavailable =
+    canSeeInternal &&
+    totalCost > 0 &&
+    currenciesDiffer &&
+    totalCostInProductCurrency === null &&
+    (parseNum(price) !== null || parseNum(salePrice) !== null);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -274,8 +322,12 @@ export function ProductForm({
           />
           {priceBelowCost && (
             <p className="mt-1 text-xs font-semibold text-red-500">
-              El precio de venta (USD {formatUsd(parseNum(price) ?? 0)}) es menor al costo del producto (USD{" "}
-              {formatUsd(totalCost)}).
+              El precio de venta ({formatCurrency(parseNum(price) ?? 0, currency)}) es menor al costo del producto (
+              {formatCurrency(totalCost, internalCurrency)}
+              {currenciesDiffer && totalCostInProductCurrency !== null
+                ? ` ≈ ${formatCurrency(totalCostInProductCurrency, currency)} al dólar blue venta`
+                : ""}
+              ).
             </p>
           )}
           <FieldError errors={state.fieldErrors?.price} />
@@ -301,8 +353,12 @@ export function ProductForm({
           />
           {salePriceBelowCost && (
             <p className="mt-1 text-xs font-semibold text-red-500">
-              El precio de oferta (USD {formatUsd(parseNum(salePrice) ?? 0)}) es menor al costo del producto (USD{" "}
-              {formatUsd(totalCost)}).
+              El precio de oferta ({formatCurrency(parseNum(salePrice) ?? 0, currency)}) es menor al costo del
+              producto ({formatCurrency(totalCost, internalCurrency)}
+              {currenciesDiffer && totalCostInProductCurrency !== null
+                ? ` ≈ ${formatCurrency(totalCostInProductCurrency, currency)} al dólar blue venta`
+                : ""}
+              ).
             </p>
           )}
           <FieldError errors={state.fieldErrors?.sale_price} />
@@ -311,12 +367,25 @@ export function ProductForm({
           <FieldLabel htmlFor="currency" className={labelClasses} help="En qué moneda se expresa el precio y el precio de oferta.">
             Moneda
           </FieldLabel>
-          <select id="currency" name="currency" defaultValue={product?.currency ?? "ARS"} className={inputClasses}>
+          <select
+            id="currency"
+            name="currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as "ARS" | "USD")}
+            className={inputClasses}
+          >
             <option value="ARS">ARS</option>
             <option value="USD">USD</option>
           </select>
         </div>
       </div>
+
+      {conversionUnavailable && (
+        <p className="-mt-3 text-xs text-foreground/40">
+          El precio está en {currency} y el costo interno en {internalCurrency}: no pudimos obtener la cotización del
+          dólar blue para compararlos, así que no se muestra la advertencia de precio por debajo del costo.
+        </p>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -413,7 +482,7 @@ export function ProductForm({
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-3">
             <div>
               <FieldLabel
                 htmlFor="cost_price"
@@ -421,7 +490,7 @@ export function ProductForm({
                 help="Lo que efectivamente pagaste por el producto, sin envío. Con esto y el peso se calcula el costo total y el precio sugerido."
                 example="120"
               >
-                Precio producto (USD, lo que pagaste)
+                Precio producto (lo que pagaste)
               </FieldLabel>
               <input
                 id="cost_price"
@@ -454,25 +523,56 @@ export function ProductForm({
                 className={inputClasses}
               />
             </div>
+            <div>
+              <FieldLabel
+                htmlFor="internal_currency"
+                className={labelClasses}
+                help="En qué moneda pagaste el producto. Puede ser distinta de la moneda del precio público — si difieren, la comparación de abajo convierte con el dólar blue."
+              >
+                Moneda del costo
+              </FieldLabel>
+              <select
+                id="internal_currency"
+                name="internal_currency"
+                value={internalCurrency}
+                onChange={(e) => setInternalCurrency(e.target.value as "ARS" | "USD")}
+                className={inputClasses}
+              >
+                <option value="USD">USD</option>
+                <option value="ARS">ARS</option>
+              </select>
+            </div>
           </div>
 
           <dl className="grid gap-4 border-t border-primary/20 pt-4 sm:grid-cols-3">
             <div>
               <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo envío</dt>
-              <dd className="mt-1 text-sm text-foreground/80">USD {formatUsd(shippingCost)}</dd>
-              <p className="mt-0.5 text-[11px] text-foreground/35">Peso × 45 USD</p>
+              <dd className="mt-1 text-sm text-foreground/80">{formatCurrency(shippingCost, "USD")}</dd>
+              <p className="mt-0.5 text-[11px] text-foreground/35">Peso × 45 USD (proxy fijo, no varía con la moneda del costo)</p>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-foreground/40">Costo total</dt>
-              <dd className="mt-1 text-sm text-foreground/80">USD {formatUsd(totalCost)}</dd>
+              <dd className="mt-1 text-sm text-foreground/80">{formatCurrency(totalCost, internalCurrency)}</dd>
               <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto + costo envío</p>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-foreground/40">Precio sugerido</dt>
-              <dd className="mt-1 text-sm font-semibold text-primary">USD {formatUsd(suggestedPrice)}</dd>
+              <dd className="mt-1 text-sm font-semibold text-primary">{formatCurrency(suggestedPrice, internalCurrency)}</dd>
               <p className="mt-0.5 text-[11px] text-foreground/35">Precio producto × 1.12 + costo envío × 1.5</p>
             </div>
           </dl>
+          {blueRate && (
+            <p className="text-[11px] text-foreground/35">
+              Dólar blue venta: {formatCurrency(blueRate.venta, "ARS")} (
+              {new Date(blueRate.fechaActualizacion).toLocaleString("es-AR")})
+            </p>
+          )}
+          {blueRateFailed && (
+            <p className="text-[11px] text-foreground/35">
+              No pudimos obtener la cotización del dólar blue — si la moneda del costo y la del precio público
+              difieren, no se va a mostrar la advertencia de precio por debajo del costo.
+            </p>
+          )}
           <FieldError errors={state.fieldErrors?.cost_price} />
           <FieldError errors={state.fieldErrors?.weight_kg} />
           <FieldError errors={state.fieldErrors?.supplier_link} />

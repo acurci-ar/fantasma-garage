@@ -61,6 +61,9 @@ function parseProductInternalForm(formData: FormData) {
     supplier_link: String(formData.get("supplier_link") ?? ""),
     cost_price: String(formData.get("cost_price") ?? ""),
     weight_kg: String(formData.get("weight_kg") ?? ""),
+    // Campo del form se llama "internal_currency" (no "currency" a secas)
+    // para no chocar con el <select name="currency"> del precio público.
+    currency: String(formData.get("internal_currency") || "USD"),
   });
 }
 
@@ -70,7 +73,13 @@ function parseProductInternalForm(formData: FormData) {
 async function upsertInternalInfo(
   supabase: Awaited<ReturnType<typeof createClient>>,
   productId: string,
-  internal: { supplier_name: string; supplier_link: string | null; cost_price: number | null; weight_kg: number | null }
+  internal: {
+    supplier_name: string;
+    supplier_link: string | null;
+    cost_price: number | null;
+    weight_kg: number | null;
+    currency: "ARS" | "USD";
+  }
 ) {
   const hasAnyValue =
     internal.supplier_name !== "" || internal.supplier_link !== null || internal.cost_price !== null || internal.weight_kg !== null;
@@ -85,6 +94,7 @@ async function upsertInternalInfo(
       supplier_link: internal.supplier_link,
       cost_price: internal.cost_price,
       weight_kg: internal.weight_kg,
+      currency: internal.currency,
     },
     { onConflict: "product_id" }
   );
