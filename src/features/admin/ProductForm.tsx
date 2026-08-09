@@ -143,12 +143,17 @@ export function ProductForm({
     () => Math.round(((parseNum(costPrice) ?? 0) * 1.12 + shippingCostNum * 1.5) * 100) / 100,
     [costPrice, shippingCostNum]
   );
-  const hasCostData = parseNum(costPrice) !== null || parseNum(weightKg) !== null;
+  // Antes se autocompletaba con solo tocar cost_price O weight_kg, así que
+  // tirando un solo dígito en cualquiera de los dos ya pisaba Precio con un
+  // Precio Sugerido a medio completar (ej. sin costo de envío porque
+  // todavía faltaba cargar el peso). Ahora espera a tener AMBOS datos
+  // cargados — recién ahí el Precio Sugerido está completo de verdad.
+  const hasCostData = parseNum(costPrice) !== null && parseNum(weightKg) !== null;
 
-  // Si el precio está vacío y se cargan datos de costo, se autocompleta con
-  // el Precio Sugerido — pedido del smoke test. Sigue siendo editable: en
-  // cuanto el staff lo toca, `price` deja de estar vacío y este efecto no
-  // vuelve a pisarlo.
+  // Si el precio está vacío y se completaron los datos de costo, se
+  // autocompleta con el Precio Sugerido — pedido del smoke test. Sigue
+  // siendo editable: en cuanto el staff lo toca, `price` deja de estar
+  // vacío y este efecto no vuelve a pisarlo.
   useEffect(() => {
     if (price === "" && hasCostData) setPrice(String(suggestedPrice));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -642,7 +647,7 @@ export function ProductForm({
             min="0"
             step="1"
             required
-            defaultValue={product?.stock}
+            defaultValue={product?.stock ?? 0}
             className={inputClasses}
           />
           <FieldError errors={state.fieldErrors?.stock} />
