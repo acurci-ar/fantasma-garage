@@ -68,7 +68,22 @@ export function ProductForm({
   const [internalCurrency, setInternalCurrency] = useState<"ARS" | "USD">(internal?.currency ?? "USD");
   const [price, setPrice] = useState(product?.price != null ? String(product.price) : "");
   const [salePrice, setSalePrice] = useState(product?.sale_price != null ? String(product.sale_price) : "");
-  const [currency, setCurrency] = useState<"ARS" | "USD">(product?.currency ?? "ARS");
+
+  // La moneda del precio público arranca igual a "Moneda del costo" (antes
+  // quedaba fija en ARS sin importar qué se hubiera elegido ahí, lo que
+  // llevaba a comparar/mostrar cosas en monedas cruzadas sin querer).
+  // Mismo patrón "touched" que el resto del form: mientras no se la toque a
+  // mano acá, sigue a "Moneda del costo"; en cuanto se la cambia
+  // directamente, deja de auto-seguirla. En edición de un producto
+  // existente arranca "touched" (se respeta lo ya guardado, no se pisa
+  // solo porque coincida o no con la moneda del costo).
+  const [currencyTouched, setCurrencyTouched] = useState(Boolean(product));
+  const [currency, setCurrency] = useState<"ARS" | "USD">(product?.currency ?? internalCurrency);
+
+  useEffect(() => {
+    if (currencyTouched) return;
+    setCurrency(internalCurrency);
+  }, [internalCurrency, currencyTouched]);
 
   // Cotización del dólar blue — hace falta en dos lugares: (1) para sugerir
   // el costo de envío en ARS (ver autoShippingCost más abajo: peso × 45
@@ -137,7 +152,14 @@ export function ProductForm({
     setShippingCostTouched(false);
   }
 
-  const shippingCostNum = parseNum(shippingCost) ?? 0;
+  // OJO: mientras no esté "touched", NO se lee de `shippingCost` acá — ese
+  // string se sincroniza mediante un efecto (useEffect de arriba), que
+  // corre un render más tarde que el cambio de peso. Si se usara `shippingCost`
+  // directo, justo en el render donde se completa el peso (con el costo ya
+  // cargado) el autocompletado de Precio agarraba un Precio Sugerido a
+  // medio calcular, sin el costo de envío todavía. `autoShippingCost` es un
+  // useMemo puro: está actualizado en el mismo render, sin ese desfasaje.
+  const shippingCostNum = shippingCostTouched ? parseNum(shippingCost) ?? 0 : autoShippingCost ?? 0;
   const totalCost = useMemo(() => (parseNum(costPrice) ?? 0) + shippingCostNum, [costPrice, shippingCostNum]);
   const suggestedPrice = useMemo(
     () => Math.round(((parseNum(costPrice) ?? 0) * 1.12 + shippingCostNum * 1.5) * 100) / 100,
@@ -607,19 +629,29 @@ export function ProductForm({
           <FieldError errors={state.fieldErrors?.sale_price} />
         </div>
         <div>
-          <FieldLabel htmlFor="currency" className={labelClasses} help="En qué moneda se expresa el precio y el precio de oferta.">
+          <FieldLabel
+            htmlFor="currency"
+            className={labelClasses}
+            help="En qué moneda se expresa el precio y el precio de oferta. Arranca igual a 'Moneda del costo', pero se puede cambiar."
+          >
             Moneda
           </FieldLabel>
           <select
             id="currency"
             name="currency"
             value={currency}
-            onChange={(e) => setCurrency(e.target.value as "ARS" | "USD")}
+            onChange={(e) => {
+              setCurrency(e.target.value as "ARS" | "USD");
+              setCurrencyTouched(true);
+            }}
             className={inputClasses}
           >
             <option value="ARS">ARS</option>
             <option value="USD">USD</option>
           </select>
+          {!currencyTouched && (
+            <p className="mt-1 text-[11px] text-foreground/35">Sigue a &quot;Moneda del costo&quot; hasta que la cambies acá.</p>
+          )}
         </div>
       </div>
 
