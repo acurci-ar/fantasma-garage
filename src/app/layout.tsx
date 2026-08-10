@@ -9,6 +9,7 @@ import { NewsletterModalProvider } from "@/lib/newsletter/NewsletterModalContext
 import { NewsletterModal } from "@/features/home/NewsletterModal";
 import { isCurrentUserNewsletterSubscriber } from "@/actions/newsletter";
 import { getServices, getSiteSettings } from "@/lib/content/queries";
+import { getSiteUrl } from "@/lib/env";
 import type { Service, SiteSettings } from "@/types/database";
 
 const displayFont = Oswald({
@@ -24,7 +25,7 @@ const sansFont = Inter({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+const SITE_URL = getSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

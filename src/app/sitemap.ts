@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getFeaturedProducts, getFeaturedProjects, getVisibleCars } from "@/lib/content/queries";
+import { getSiteUrl } from "@/lib/env";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+const SITE_URL = getSiteUrl();
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [projects, products, cars] = await Promise.all([getFeaturedProjects(), getFeaturedProducts(), getVisibleCars()]);

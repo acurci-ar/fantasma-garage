@@ -1,10 +1,8 @@
 import "server-only";
+import { getResendFromEmail } from "@/lib/env";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-// resend.dev es un dominio de prueba de Resend que funciona sin verificar
-// dominio propio (útil hasta que se configure RESEND_FROM_EMAIL con un
-// remitente del dominio real de Fantasma Garage).
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "Fantasma Garage <onboarding@resend.dev>";
+const FROM_EMAIL = getResendFromEmail();
 
 export function isEmailConfigured(): boolean {
   return Boolean(RESEND_API_KEY);

@@ -194,7 +194,7 @@ export async function requestPasswordReset(
 
   try {
     const supabase = await createClient();
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+    const siteUrl = getSiteUrl();
     // Reusa /auth/callback (mismo intercambio PKCE code -> sesión que ya
     // usa la confirmación de signup) y de ahí sigue a la página donde se
     // define la nueva contraseña, ya con sesión de recuperación activa.

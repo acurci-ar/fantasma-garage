@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { getSiteUrl } from "@/lib/env";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+const SITE_URL = getSiteUrl();
 
 // Rastreadores de motores de respuesta con IA (ChatGPT, Claude, Perplexity,
 // Google AI Overviews, Apple Intelligence). Ya quedaban permitidos por la

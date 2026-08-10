@@ -1,6 +1,7 @@
 import { getFeaturedProjects, getServices, getSiteSettings } from "@/lib/content/queries";
+import { getSiteUrl } from "@/lib/env";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+const SITE_URL = getSiteUrl();
 
 /**
  * /llms.txt — resumen en texto plano pensado para que los asistentes de IA

@@ -4,6 +4,7 @@ import { Section } from "@/components/ui/Section";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { getServices } from "@/lib/content/queries";
+import { getSiteUrl } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Servicios",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     "Restauración integral, mecánica y chapa y pintura para autos clásicos y muscle cars.",
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fantasmagarage.com";
+const SITE_URL = getSiteUrl();
 
 export default async function ServiciosPage() {
   const services = await getServices();
