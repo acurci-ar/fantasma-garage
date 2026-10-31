@@ -148,6 +148,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     getServices(),
     isCurrentUserNewsletterSubscriber(),
   ]);
+  // Interruptor a nivel sitio (Configuración): decide si "Travesías" aparece
+  // en el menú y la home. Cada travesía, además, se muestra solo si está publicada.
+  const showTravesias = settings.travesias_enabled;
   const jsonLd = buildLocalBusinessJsonLd(settings, services);
 
   return (
@@ -166,9 +169,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         <CartProvider>
           <NewsletterModalProvider>
-            <Navbar hideNewsletterCta={isNewsletterSubscriber} />
+            <Navbar hideNewsletterCta={isNewsletterSubscriber} showTravesias={showTravesias} />
             <main id="main-content">{children}</main>
-            <Footer settings={settings} hideNewsletterCta={isNewsletterSubscriber} />
+            <Footer settings={settings} hideNewsletterCta={isNewsletterSubscriber} showTravesias={showTravesias} />
             <CartDrawer />
             <NewsletterModal />
           </NewsletterModalProvider>

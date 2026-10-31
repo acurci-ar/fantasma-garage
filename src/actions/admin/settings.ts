@@ -21,28 +21,32 @@ export async function updateSiteSettings(
   _prevState: SiteSettingsActionState,
   formData: FormData
 ): Promise<SiteSettingsActionState> {
-  const raw = Object.fromEntries(
-    [
-      "whatsapp_number",
-      "contact_email",
-      "address",
-      "business_hours",
-      "instagram_url",
-      "youtube_channel_url",
-      "youtube_playlist_url",
-      "years_experience",
-      "projects_completed",
-      "address_street",
-      "address_locality",
-      "address_region",
-      "address_postal_code",
-      "address_country",
-      "phone_e164",
-      "geo_lat",
-      "geo_lng",
-      "price_range",
-    ].map((key) => [key, String(formData.get(key) ?? "")])
-  );
+  const raw = {
+    ...Object.fromEntries(
+      [
+        "whatsapp_number",
+        "contact_email",
+        "address",
+        "business_hours",
+        "instagram_url",
+        "youtube_channel_url",
+        "youtube_playlist_url",
+        "years_experience",
+        "projects_completed",
+        "address_street",
+        "address_locality",
+        "address_region",
+        "address_postal_code",
+        "address_country",
+        "phone_e164",
+        "geo_lat",
+        "geo_lng",
+        "price_range",
+      ].map((key) => [key, String(formData.get(key) ?? "")])
+    ),
+    // Interruptor de la sección Travesías (checkbox → boolean).
+    travesias_enabled: formData.get("travesias_enabled") === "on",
+  };
 
   const parsed = siteSettingsSchema.safeParse(raw);
   if (!parsed.success) {
@@ -52,6 +56,8 @@ export async function updateSiteSettings(
   const numericKeys = new Set(["years_experience", "projects_completed"]);
   const rows = Object.entries(parsed.data).map(([key, value]) => ({
     key,
+    // Numéricos como number, booleanos como boolean, el resto string —
+    // tal como getSiteSettings() los espera de vuelta (value_json).
     value_json: numericKeys.has(key) ? Number(value || 0) : value,
   }));
 

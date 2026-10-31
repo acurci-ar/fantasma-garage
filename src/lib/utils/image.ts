@@ -57,7 +57,7 @@ export function exceedsHardLimit(bytes: number): boolean {
  * está en esta lista, algo que pasa seguido cuando el staff pega la URL de
  * la foto de un proveedor externo. Ver needsUnoptimizedImage.
  */
-const OPTIMIZABLE_IMAGE_HOSTS = [/\.supabase\.co$/, /^i\.ytimg\.com$/];
+const OPTIMIZABLE_IMAGE_HOSTS = [/\.supabase\.co$/, /^i\.ytimg\.com$/, /^images\.unsplash\.com$/];
 
 /**
  * true si next/image NO va a poder optimizar esta URL (host externo fuera

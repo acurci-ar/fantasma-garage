@@ -156,6 +156,18 @@ esa variable esté configurada en Vercel antes de probar una compra real —
 sin ella, `/checkout` responde "Supabase no está configurado" aunque el
 resto del sitio funcione.
 
+### Travesías (nuevo)
+
+Viajes premium en autos clásicos, como nueva entrada del menú público
+(`/travesias`) y módulo de administración (`/admin/travesias`). Cada
+travesía es una landing parametrizada (hero, precio, fechas, qué incluye,
+mapa del recorrido y un bloque por día con fotos) que se puede publicar,
+ocultar y mostrar u ocultar del menú desde el admin. Requiere aplicar
+`supabase/migrations/0023_trips.sql`, que además carga la Travesía Ruta 66
+(SEMA 2027). Documentación del módulo y la investigación de costos en
+[`docs/travesias/TRAVESIAS.md`](./docs/travesias/TRAVESIAS.md); modelo
+económico en `docs/travesias/Travesia_Ruta66_Costos.xlsx`.
+
 ## Roadmap — lo que falta
 
 No incluido todavía, preparado para conectarse sin rehacer la base (tipos,

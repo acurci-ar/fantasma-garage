@@ -166,6 +166,30 @@ export function SiteSettingsForm({ settings }: { settings: SiteSettings }) {
       </section>
 
       <section className="border-t border-secondary/20 pt-8">
+        <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Travesías</h2>
+        <p className="mt-1 max-w-2xl text-xs text-foreground/40">
+          Interruptor general de la sección Travesías (viajes en autos clásicos).
+        </p>
+        <label className="mt-4 flex items-start gap-3 rounded-sm border border-secondary/30 bg-card/30 p-4 text-sm text-foreground/80">
+          <input
+            type="checkbox"
+            name="travesias_enabled"
+            defaultChecked={settings.travesias_enabled}
+            className="mt-0.5 h-4 w-4 rounded-sm border-secondary/50 bg-background/60 text-primary focus:ring-primary"
+          />
+          <span>
+            Mostrar “Travesías” en la web
+            <span className="mt-1 block text-xs font-normal text-foreground/45">
+              Si está activado, el ítem “Travesías” aparece en el menú principal y en la página de inicio. Cada
+              travesía, además, se muestra en la sección solo si está publicada (eso se controla en cada travesía,
+              desde Travesías). Si lo desactivás, no aparece la sección ni el ítem del menú, aunque haya travesías
+              publicadas.
+            </span>
+          </span>
+        </label>
+      </section>
+
+      <section className="border-t border-secondary/20 pt-8">
         <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">
           Datos estructurados (SEO / IA)
         </h2>

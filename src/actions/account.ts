@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { profileSchema, changePasswordSchema, requestPasswordResetSchema, setNewPasswordSchema } from "@/lib/validation/account";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp } from "@/lib/utils/rateLimit";
+import { getSiteUrl } from "@/lib/env";
 
 export interface ProfileActionState {
   status: "idle" | "success" | "error";

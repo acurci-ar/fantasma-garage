@@ -16,11 +16,17 @@ const SECONDARY_LINKS = [
 export function Footer({
   settings,
   hideNewsletterCta = false,
+  showTravesias = false,
 }: {
   settings: SiteSettings;
   /** True si quien está mirando la página ya está suscripto al newsletter (ver isCurrentUserNewsletterSubscriber). */
   hideNewsletterCta?: boolean;
+  /** Misma regla que en Navbar: solo si hay travesías publicadas en el menú. */
+  showTravesias?: boolean;
 }) {
+  const links = showTravesias
+    ? SECONDARY_LINKS.flatMap((l) => (l.href === "/proyectos" ? [l, { href: "/travesias", label: "Travesías" }] : [l]))
+    : SECONDARY_LINKS;
   return (
     <footer className="border-t border-secondary/30 bg-background">
       {!hideNewsletterCta && (
@@ -59,7 +65,7 @@ export function Footer({
             Navegación
           </h3>
           <ul className="space-y-2">
-            {SECONDARY_LINKS.map((link) => (
+            {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}

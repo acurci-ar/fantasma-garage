@@ -44,6 +44,7 @@ export const siteSettingsSchema = z.object({
   geo_lat: optionalLatLng,
   geo_lng: optionalLatLng,
   price_range: optionalText(10),
+  travesias_enabled: z.boolean(),
 });
 
 export type SiteSettingsFormValues = z.infer<typeof siteSettingsSchema>;

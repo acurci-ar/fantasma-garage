@@ -483,6 +483,8 @@ export interface SiteSettings {
   youtube_playlist_url: string;
   years_experience: number;
   projects_completed: number;
+  /** Interruptor a nivel sitio: si es true, "Travesías" aparece en el menú y en la home. */
+  travesias_enabled: boolean;
   /**
    * Campos estructurados adicionales para el JSON-LD (schema.org
    * LocalBusiness/AutoRepair) del layout raíz — separados de `address`

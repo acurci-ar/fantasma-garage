@@ -19,7 +19,14 @@ const NAV_LINKS = [
   { href: "/contacto", label: "Contacto" },
 ];
 
-export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: boolean }) {
+export function Navbar({
+  hideNewsletterCta = false,
+  showTravesias = false,
+}: {
+  hideNewsletterCta?: boolean;
+  /** True si hay al menos una travesía publicada con show_in_menu (ver getMenuTrips). */
+  showTravesias?: boolean;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
@@ -31,6 +38,14 @@ export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: bool
   const pathname = usePathname();
   const { count, openCart } = useCart();
   const { openModal: openNewsletter } = useNewsletterModal();
+  // "Travesías" se inserta después de "Proyectos" solo cuando el admin lo
+  // habilitó (travesía publicada + "mostrar en menú"), así la entrada no
+  // aparece vacía mientras no hay nada que vender.
+  const navLinks = showTravesias
+    ? NAV_LINKS.flatMap((link) =>
+        link.href === "/proyectos" ? [link, { href: "/travesias", label: "Travesías" }] : [link]
+      )
+    : NAV_LINKS;
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -106,14 +121,14 @@ export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: bool
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 lg:flex" aria-label="Navegación principal">
-          {NAV_LINKS.map((link) => (
+        <nav className="hidden items-center gap-5 xl:flex 2xl:gap-7" aria-label="Navegación principal">
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm font-medium uppercase tracking-wide text-foreground/80 transition-colors duration-220 hover:text-primary",
-                pathname === link.href && "text-primary"
+                "whitespace-nowrap text-[13px] font-medium uppercase tracking-wide text-foreground/80 transition-colors duration-220 hover:text-primary 2xl:text-sm",
+                (pathname === link.href || (link.href !== "/" && pathname.startsWith(`${link.href}/`))) && "text-primary"
               )}
             >
               {link.label}
@@ -173,7 +188,7 @@ export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: bool
           </Link>
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-secondary/60 text-foreground xl:hidden"
             aria-expanded={drawerOpen}
             aria-controls="mobile-drawer"
             aria-label={drawerOpen ? "Cerrar menú" : "Abrir menú"}
@@ -194,12 +209,12 @@ export function Navbar({ hideNewsletterCta = false }: { hideNewsletterCta?: bool
       <div
         id="mobile-drawer"
         className={cn(
-          "overflow-hidden bg-background/97 backdrop-blur-md transition-[max-height] duration-320 ease-out motion-reduce:transition-none lg:hidden",
-          drawerOpen ? "max-h-[28rem] border-t border-secondary/40" : "max-h-0"
+          "overflow-hidden bg-background/97 backdrop-blur-md transition-[max-height] duration-320 ease-out motion-reduce:transition-none xl:hidden",
+          drawerOpen ? "max-h-[32rem] border-t border-secondary/40" : "max-h-0"
         )}
       >
         <nav className="flex flex-col gap-1 px-5 py-4" aria-label="Navegación móvil">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

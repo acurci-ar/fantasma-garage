@@ -10,6 +10,8 @@ import { NewsletterPreferencesForm } from "@/features/account/NewsletterPreferen
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { AccountSignOutButton } from "@/features/account/AccountSignOutButton";
 import { ContactForm } from "@/features/home/ContactForm";
+import { getMyReservations } from "@/lib/content/trips";
+import { reservationBalance, TRIP_RESERVATION_STATUS_LABEL } from "@/types/trips";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type {
@@ -75,6 +77,9 @@ export default async function CuentaPage() {
 
   const typedOrders = (orders ?? []) as Order[];
   const typedMessages = (messages ?? []) as ContactMessage[];
+  // Reservas de travesías visibles para este cliente (RLS: por user_id o por
+  // el email de la sesión).
+  const myReservations = await getMyReservations();
 
   // Proyectos a los que este usuario tiene acceso otorgado (ver
   // project_access / has_project_access en 0011_project_expansion.sql).
@@ -173,6 +178,36 @@ export default async function CuentaPage() {
               </ul>
             )}
           </div>
+
+          {myReservations.length > 0 && (
+            <div>
+              <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis travesías</h2>
+              <p className="mt-1 text-xs text-foreground/40">Tus reservas, con su estado y saldo.</p>
+              <ul className="mt-4 space-y-3">
+                {myReservations.map((r) => {
+                  const { balance } = reservationBalance(r);
+                  return (
+                    <li key={r.id}>
+                      <Link
+                        href={`/cuenta/reservas/${r.id}`}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-secondary/30 bg-card/40 p-4 transition-colors duration-220 hover:border-primary/60"
+                      >
+                        <div>
+                          <p className="font-display text-sm uppercase tracking-tight text-foreground">
+                            {r.trip?.title ?? "Travesía"}
+                          </p>
+                          <p className="mt-1 text-xs text-foreground/40">
+                            {r.participants} participante(s) · saldo {formatCurrency(balance, r.currency)}
+                          </p>
+                        </div>
+                        <Badge tone="primary">{TRIP_RESERVATION_STATUS_LABEL[r.status]}</Badge>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           <div>
             <h2 className="font-display text-sm uppercase tracking-wide text-foreground/70">Mis pedidos</h2>

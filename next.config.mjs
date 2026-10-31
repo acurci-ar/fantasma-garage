@@ -16,7 +16,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com",
+  "img-src 'self' data: blob: https://*.supabase.co https://i.ytimg.com https://images.unsplash.com",
   "font-src 'self' data:",
   "connect-src 'self' https://*.supabase.co",
   "frame-src https://www.youtube-nocookie.com",
@@ -49,6 +49,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "https", hostname: "i.ytimg.com" },
+      // Fotos de las travesías (Unsplash) cargadas por URL desde /admin/travesias.
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
     formats: ["image/avif", "image/webp"],
   },

@@ -15,8 +15,8 @@ async function getKpis(): Promise<Kpi[]> {
   if (!isSupabaseConfigured()) {
     return [
       { label: "Productos publicados", value: "—" },
-      { label: "Stock bajo", value: "—" },
       { label: "Pedidos pendientes de pago", value: "—" },
+      { label: "Reservas solicitadas", value: "—" },
       { label: "Mensajes nuevos", value: "—" },
     ];
   }
@@ -24,11 +24,12 @@ async function getKpis(): Promise<Kpi[]> {
   const { createClient } = await import("@/lib/supabase/server");
   const supabase = await createClient();
 
-  const [{ count: products }, { count: pendingOrders }, { count: newMessages }, { data: stockRows }] =
+  const [{ count: products }, { count: pendingOrders }, { count: newMessages }, { count: newReservations }, { data: stockRows }] =
     await Promise.all([
       supabase.from("products").select("id", { count: "exact", head: true }).eq("status", "published"),
       supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "pendiente_pago"),
       supabase.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "nuevo"),
+      supabase.from("trip_reservations").select("id", { count: "exact", head: true }).eq("status", "solicitada"),
       supabase.from("products").select("stock, low_stock_threshold").eq("status", "published"),
     ]);
 
@@ -36,8 +37,8 @@ async function getKpis(): Promise<Kpi[]> {
 
   return [
     { label: "Productos publicados", value: String(products ?? 0), href: "/admin/productos" },
-    { label: "Stock bajo", value: String(lowStockCount), href: "/admin/productos" },
     { label: "Pedidos pendientes de pago", value: String(pendingOrders ?? 0), href: "/admin/pedidos" },
+    { label: "Reservas solicitadas", value: String(newReservations ?? 0), href: "/admin/reservas" },
     { label: "Mensajes nuevos", value: String(newMessages ?? 0), href: "/admin/mensajes" },
   ];
 }
